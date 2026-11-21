@@ -6,7 +6,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Building2 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { authErrorMessage } from "@/lib/auth-errors";
 import { registerOwnerSchema } from "@turf/validation";
+import { FormError } from "@/components/ui/form-error";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
@@ -16,25 +18,21 @@ export default function RegisterOwnerPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [form, setForm] = useState({ fullName: "", email: "", phone: "", password: "", organizationName: "", city: "Mumbai" });
+  const [error, setError] = useState<string | null>(null);
 
   const register = useMutation({
-    mutationFn: () => {
-      const input = registerOwnerSchema.parse({
-        fullName: form.fullName,
-        email: form.email,
-        password: form.password,
-        ...(form.phone ? { phone: form.phone } : {}),
-        organizationName: form.organizationName,
-        city: form.city,
-      });
-      return api.post("/auth/register-owner", input);
-    },
+    mutationFn: (input: ReturnType<typeof registerOwnerSchema.parse>) => api.post("/auth/register-owner", input),
     onSuccess: async () => {
+      setError(null);
       await qc.invalidateQueries({ queryKey: ["session"] });
       toast.success("Organization created — let's set up your first venue");
       router.push("/tenant/dashboard");
     },
-    onError: (err: Error) => toast.error(err.message || "Registration failed"),
+    onError: (err: unknown) => {
+      const message = authErrorMessage(err, "We're having trouble creating your organization. Please try again shortly.");
+      setError(message);
+      toast.error("Registration failed", { description: message });
+    },
   });
 
   return (
@@ -45,7 +43,26 @@ export default function RegisterOwnerPage() {
           <CardDescription>Create your organization — verification is quick, and you can start setting up venues immediately.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); register.mutate(); }}>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setError(null);
+              const parsed = registerOwnerSchema.safeParse({
+                fullName: form.fullName,
+                email: form.email,
+                password: form.password,
+                ...(form.phone ? { phone: form.phone } : {}),
+                organizationName: form.organizationName,
+                city: form.city,
+              });
+              if (!parsed.success) {
+                setError(parsed.error.issues[0]?.message ?? "Please check the highlighted fields.");
+                return;
+              }
+              register.mutate(parsed.data);
+            }}
+          >
             <div className="space-y-1.5">
               <Label htmlFor="orgName">Organization name</Label>
               <Input id="orgName" required minLength={2} value={form.organizationName} onChange={(e) => setForm({ ...form, organizationName: e.target.value })} placeholder="GreenArena Sports" />
@@ -68,6 +85,7 @@ export default function RegisterOwnerPage() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="10+ chars, mixed case, a number" />
             </div>
+            {error && <FormError message={error} />}
             <Button type="submit" className="w-full" loading={register.isPending}>Create organization</Button>
           </form>
         </CardContent>

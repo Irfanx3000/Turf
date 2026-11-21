@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { api, qs } from "@/lib/api-client";
@@ -16,8 +17,9 @@ interface BrowseResponse { items: TurfCardData[]; total: number; page: number; p
 interface Sport { id: string; name: string; slug: string; }
 
 function TurfsBrowser() {
-  const [search, setSearch] = useState("");
-  const [sport, setSport] = useState("");
+  const params = useSearchParams();
+  const [search, setSearch] = useState(params.get("search") ?? "");
+  const [sport, setSport] = useState(params.get("sport") ?? "");
   const [page, setPage] = useState(1);
 
   const sports = useQuery({ queryKey: ["sports"], queryFn: () => api.get<Sport[]>("/sports") });

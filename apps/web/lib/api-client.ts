@@ -38,12 +38,20 @@ async function request<T>(path: string, init?: RequestInit & { auth?: boolean })
   if (init?.body !== undefined && !headers.has("content-type")) {
     headers.set("content-type", "application/json");
   }
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-    cache: "no-store",
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers,
+      credentials: "include",
+      cache: "no-store",
+    });
+  } catch {
+    // fetch() only rejects on network-level failures (offline, DNS, refused).
+    // Surface a typed error so callers can show an honest "can't connect"
+    // message instead of a raw TypeError.
+    throw new ApiClientError(0, "NETWORK", "Unable to connect. Please check your internet connection.");
+  }
 
   if (res.status === 204) return undefined as T;
 

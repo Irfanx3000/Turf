@@ -10,12 +10,16 @@ import { formatDistance, formatMoney } from "@/lib/utils";
 export function TurfCard({ turf, date, className }: { turf: TurfCardData; date?: string; className?: string }) {
   const href = date ? `/turfs/${turf.slug}?date=${date}` : `/turfs/${turf.slug}`;
   return (
-    <motion.div variants={cardStableVariants} className={className}>
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className={className}
+    >
       <Link
         href={href}
-        className="group block overflow-hidden rounded-lg border bg-card shadow-card transition-shadow hover:shadow-raise focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="group block overflow-hidden rounded-2xl border bg-card shadow-card transition-shadow duration-200 hover:shadow-raise focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <div className="relative aspect-[16/9] overflow-hidden bg-brand-navy-900">
+        <div className="relative aspect-[16/9] overflow-hidden bg-brand-navy-800">
           {turf.heroImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -25,7 +29,7 @@ export function TurfCard({ turf, date, className }: { turf: TurfCardData; date?:
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-navy-800 to-brand-navy-600 text-white/50">
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-emerald-100 to-brand-emerald-200 text-primary/60">
               <MapPin className="h-8 w-8" aria-hidden />
             </div>
           )}
@@ -68,8 +72,3 @@ export function TurfCard({ turf, date, className }: { turf: TurfCardData; date?:
     </motion.div>
   );
 }
-
-const cardStableVariants = {
-  rest: { y: 0 },
-  hover: { y: -4 },
-};

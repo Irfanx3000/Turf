@@ -117,4 +117,6 @@ export interface CreateBookingResponse {
   };
   /** When the temporary reservation auto-expires if unpaid. */
   reservationExpiresAt: string | null;
+  /** Present when this response is an idempotent replay of an earlier request. */
+  replayed?: true;
 }

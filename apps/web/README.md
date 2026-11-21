@@ -1,8 +1,29 @@
 # Turf Web App (`apps/web`)
 
 Next.js 15 App Router PWA — mobile-first customer pages, desktop-first
-dashboards. Deep navy / emerald / off-white sports identity with light + dark
-themes.
+dashboards. Minimalist sports-and-lifestyle identity with light + dark themes.
+
+## Design tokens
+
+One source of truth in `app/globals.css` (HSL CSS variables) + `tailwind.config.ts`
+(brand scales). Change these to re-theme globally:
+
+| Token | Light | Purpose |
+|---|---|---|
+| `background` | `#F8F9F6` warm off-white | Page canvas |
+| `card` | `#FFFFFF` | Card surfaces |
+| `primary` | `#176B4D` forest green | Primary CTAs, links, focus rings |
+| `secondary` / `accent` | `#E7F1EA` soft sage | Subtle fills, icon tiles |
+| `muted-foreground` | `#737D76` | Secondary text |
+| `border` | `#E7EBE7` | Soft neutral borders |
+| `destructive` | `#C84C4C` | Errors |
+| `success` | `#238653` | Success states |
+
+Dark mode maps the same tokens to a calm ink-green. Radius base is 12px
+(cards 16px), shadows are soft (never heavy borders), transitions are
+150–250ms, and `prefers-reduced-motion` is respected globally. The
+`brand-emerald-*` / `brand-navy-*` Tailwind scales are the historical class
+names — `brand-emerald` is the forest scale, `brand-navy` is the ink scale.
 
 - **Stack**: TypeScript (strict), Tailwind CSS, shadcn-style UI kit on Radix
   primitives, Motion, TanStack Query, Zod (via `@turf/validation`), Lucide

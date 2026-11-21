@@ -91,12 +91,12 @@ function TurfDetailInner() {
 
       {/* Gallery */}
       <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
-        <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-brand-navy-900 shadow-card">
+        <div className="relative aspect-[16/9] overflow-hidden rounded-2xl bg-brand-emerald-100 shadow-card">
           {turf.heroImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={turf.heroImageUrl} alt={turf.name} className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full items-center justify-center text-white/40"><MapPin className="h-10 w-10" /></div>
+            <div className="flex h-full items-center justify-center text-primary/50"><MapPin className="h-10 w-10" /></div>
           )}
         </div>
         <div className="grid grid-cols-3 gap-3 md:grid-cols-1">

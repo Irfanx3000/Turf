@@ -3,71 +3,68 @@
 @tailwind utilities;
 
 /* ── Turf design tokens ───────────────────────────────────────────────
-   Deep navy + emerald on warm off-white; dark mode flips to deep navy
-   surfaces. All pairs meet WCAG AA contrast.
+   Minimalist sports-and-lifestyle palette: warm off-white canvas, white
+   cards, forest-green primary, sage accents, soft neutral borders.
+   Dark mode flips to a calm ink-green. All pairs meet WCAG AA contrast.
+   Change the theme globally here — components only use these tokens.
 */
 @layer base {
   :root {
-    --background: 40 33% 98%;          /* warm off-white */
-    --foreground: 215 55% 12%;         /* near-navy ink */
-    --card: 0 0% 100%;
-    --card-foreground: 215 55% 12%;
+    --background: 80 23% 97%;           /* #F8F9F6 warm off-white */
+    --foreground: 140 12% 14%;          /* #202923 charcoal */
+    --card: 0 0% 100%;                  /* #FFFFFF */
+    --card-foreground: 140 12% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 215 55% 12%;
-    --primary: 162 84% 39%;            /* emerald 600 */
-    --primary-foreground: 160 90% 98%;
-    --secondary: 215 45% 94%;
-    --secondary-foreground: 215 55% 16%;
-    --muted: 40 20% 94%;
-    --muted-foreground: 215 15% 40%;
-    --accent: 162 76% 94%;
-    --accent-foreground: 162 90% 14%;
-    --destructive: 0 72% 46%;
+    --popover-foreground: 140 12% 14%;
+    --primary: 159 65% 25%;             /* #176B4D forest green */
+    --primary-foreground: 150 30% 98%;
+    --secondary: 138 26% 92%;           /* #E7F1EA soft sage */
+    --secondary-foreground: 159 40% 16%;
+    --muted: 120 14% 95%;
+    --muted-foreground: 138 5% 46%;     /* #737D76 muted gray */
+    --accent: 138 26% 92%;              /* sage */
+    --accent-foreground: 159 45% 16%;
+    --destructive: 0 53% 54%;           /* #C84C4C */
     --destructive-foreground: 0 0% 100%;
-    --border: 215 25% 88%;
-    --input: 215 25% 84%;
-    --ring: 162 84% 39%;
-    --radius: 0.625rem;
+    --success: 149 59% 33%;             /* #238653 */
+    --border: 120 9% 91%;               /* #E7EBE7 soft neutral */
+    --input: 120 9% 87%;
+    --ring: 159 55% 32%;
+    --radius: 0.75rem;                  /* 12px */
   }
 
   .dark {
-    --background: 215 60% 7%;          /* deep navy */
-    --foreground: 210 30% 92%;
-    --card: 215 55% 10%;
-    --card-foreground: 210 30% 92%;
-    --popover: 215 55% 10%;
-    --popover-foreground: 210 30% 92%;
-    --primary: 162 72% 45%;            /* emerald 500 for dark */
-    --primary-foreground: 162 90% 98%;
-    --secondary: 215 40% 16%;
-    --secondary-foreground: 210 30% 90%;
-    --muted: 215 40% 14%;
-    --muted-foreground: 215 12% 62%;
-    --accent: 162 50% 14%;
-    --accent-foreground: 162 80% 85%;
-    --destructive: 0 68% 55%;
+    --background: 140 10% 9%;           /* #141915 calm ink */
+    --foreground: 130 12% 92%;
+    --card: 140 10% 12%;
+    --card-foreground: 130 12% 92%;
+    --popover: 140 10% 12%;
+    --popover-foreground: 130 12% 92%;
+    --primary: 155 47% 45%;             /* lighter forest for dark */
+    --primary-foreground: 155 40% 98%;
+    --secondary: 140 8% 16%;
+    --secondary-foreground: 130 12% 90%;
+    --muted: 140 8% 14%;
+    --muted-foreground: 135 6% 62%;
+    --accent: 155 25% 16%;
+    --accent-foreground: 155 40% 85%;
+    --destructive: 0 45% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 215 35% 18%;
-    --input: 215 35% 22%;
-    --ring: 162 72% 45%;
+    --success: 149 55% 45%;
+    --border: 140 8% 20%;
+    --input: 140 8% 24%;
+    --ring: 155 47% 45%;
   }
 
   * { @apply border-border; }
   html { scroll-behavior: smooth; }
   body { @apply bg-background text-foreground antialiased; font-feature-settings: "cv11", "ss01"; }
 
-  ::selection { @apply bg-brand-emerald-500/25; }
+  ::selection { @apply bg-primary/20; }
 }
 
 @layer utilities {
   .text-balance { text-wrap: balance; }
-  /* Branded gradient hero text */
-  .text-gradient-brand {
-    @apply bg-gradient-to-r from-brand-navy-800 via-brand-navy-600 to-brand-emerald-600 bg-clip-text text-transparent;
-  }
-  .dark .text-gradient-brand {
-    @apply from-white via-brand-emerald-400 to-brand-emerald-500;
-  }
 }
 
 /* Reduced motion: soften everything, always. */
@@ -76,5 +73,6 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

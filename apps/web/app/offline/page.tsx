@@ -7,7 +7,7 @@ export const metadata = { title: "You're offline" };
 export default function OfflinePage() {
   return (
     <div className="container flex flex-col items-center justify-center py-24 text-center">
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-navy-800 text-white">
+      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-primary">
         <WifiOff className="h-8 w-8" />
       </div>
       <h1 className="text-2xl font-bold">You&apos;re offline</h1>

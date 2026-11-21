@@ -1,11 +1,14 @@
 import {
-  BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException,
+  BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { eq } from "drizzle-orm";
 import { notificationPreferences, profiles, tenantMembers, tenants } from "@turf/db";
 import type { RegisterInput } from "@turf/validation";
 import { DbService } from "../database/db-tokens.js";
 import { audit } from "../audit-logs/audit.helper.js";
+import { logger } from "../common/logging/logger.service.js";
+import { isInfrastructureError, serviceUnavailableException, signInExceptionFor } from "./sign-in-errors.js";
 import { DevJwtVerifier } from "./jwt-verifier.js";
 import { authVerifier } from "./verifier-provider.js";
 import { DevAuthAdapter } from "./adapters/dev-auth.adapter.js";
@@ -33,16 +36,29 @@ export class AuthService {
   }
 
   async register(input: RegisterInput, requestId: string): Promise<AuthResult> {
-    const existing = await this.db.service
-      .select({ id: profiles.id })
-      .from(profiles)
-      .where(eq(profiles.email, input.email))
-      .limit(1);
+    let existing: Array<{ id: string }>;
+    try {
+      existing = await this.db.service
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(eq(profiles.email, input.email))
+        .limit(1);
+    } catch (err) {
+      // DB unreachable — an infrastructure failure, not a client error.
+      logger.error({ requestId, err }, "register: profile lookup failed");
+      throw serviceUnavailableException("sign-up");
+    }
     if (existing.length > 0) {
       throw new ConflictException({ errorCode: "CONFLICT", message: "an account with this email already exists" });
     }
 
     const signUp = await this.provider.signUp(input.email, input.password).catch((err: Error & { status?: number }) => {
+      // Providers mark client errors (weak password, existing auth user) with
+      // a 400; anything else is infrastructure and must not surface as one.
+      if (isInfrastructureError(err) || (err.status !== undefined && err.status >= 500)) {
+        logger.error({ requestId, err: err.message }, "register: auth provider unavailable");
+        throw serviceUnavailableException("sign-up");
+      }
       throw new BadRequestException({ errorCode: "BAD_REQUEST", message: err.message });
     });
 
@@ -80,27 +96,55 @@ export class AuthService {
   }
 
   async login(email: string, password: string, requestId: string): Promise<AuthResult> {
-    const result = await this.provider.signIn(email, password).catch(() => {
-      throw new UnauthorizedException({ errorCode: "UNAUTHORIZED", message: "invalid credentials" });
-    });
+    // 1. Credential verification via the provider. A DB outage or a network
+    //    failure reaching Supabase used to be reported as "invalid
+    //    credentials" — classify honestly instead. Passwords are never logged.
+    let result;
+    try {
+      result = await this.provider.signIn(email, password);
+    } catch (err) {
+      const failure = signInExceptionFor(err);
+      if (failure.getStatus() >= 500) {
+        logger.error({ requestId, err }, "login: auth provider unreachable");
+      } else {
+        logger.warn({ requestId, status: failure.getStatus() }, "login: rejected");
+      }
+      throw failure;
+    }
 
-    const rows = await this.db.service
-      .select({
-        id: profiles.id,
-        email: profiles.email,
-        platformRole: profiles.platformRole,
-        fullName: profiles.fullName,
-        isActive: profiles.isActive,
-      })
-      .from(profiles)
-      .where(eq(profiles.id, result.id))
-      .limit(1);
-    const profile = rows[0];
+    // 2. Profile lookup — same honest classification for infrastructure
+    //    failures; a missing profile is a generic credential error (no
+    //    account-existence leakage).
+    let profile: { id: string; email: string; platformRole: string; fullName: string | null; isActive: boolean } | undefined;
+    try {
+      const rows = await this.db.service
+        .select({
+          id: profiles.id,
+          email: profiles.email,
+          platformRole: profiles.platformRole,
+          fullName: profiles.fullName,
+          isActive: profiles.isActive,
+        })
+        .from(profiles)
+        .where(eq(profiles.id, result.id))
+        .limit(1);
+      profile = rows[0];
+    } catch (err) {
+      logger.error({ requestId, err }, "login: profile lookup failed");
+      throw serviceUnavailableException("sign-in");
+    }
     if (!profile) {
-      throw new UnauthorizedException({ errorCode: "UNAUTHORIZED", message: "profile missing — contact support" });
+      logger.warn({ requestId }, "login: authenticated user has no profile row");
+      throw new UnauthorizedException({
+        errorCode: "INVALID_CREDENTIALS",
+        message: "the email or password is incorrect",
+      });
     }
     if (!profile.isActive) {
-      throw new UnauthorizedException({ errorCode: "UNAUTHORIZED", message: "account disabled" });
+      throw new ForbiddenException({
+        errorCode: "ACCOUNT_DISABLED",
+        message: "this account has been disabled — contact support",
+      });
     }
 
     await audit(this.db.service, { requestId, action: "auth.login", entityType: "profile", entityId: profile.id });
@@ -116,16 +160,26 @@ export class AuthService {
     input: { email: string; password: string; fullName: string; phone?: string; organizationName: string; city: string },
     requestId: string,
   ): Promise<{ auth: AuthResult; tenantId: string }> {
-    const existing = await this.db.service
-      .select({ id: profiles.id })
-      .from(profiles)
-      .where(eq(profiles.email, input.email))
-      .limit(1);
+    let existing: Array<{ id: string }>;
+    try {
+      existing = await this.db.service
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(eq(profiles.email, input.email))
+        .limit(1);
+    } catch (err) {
+      logger.error({ requestId, err }, "register-owner: profile lookup failed");
+      throw serviceUnavailableException("sign-up");
+    }
     if (existing.length > 0) {
       throw new ConflictException({ errorCode: "CONFLICT", message: "an account with this email already exists" });
     }
 
     const signUp = await this.provider.signUp(input.email, input.password).catch((err: Error & { status?: number }) => {
+      if (isInfrastructureError(err) || (err.status !== undefined && err.status >= 500)) {
+        logger.error({ requestId, err: err.message }, "register-owner: auth provider unavailable");
+        throw serviceUnavailableException("sign-up");
+      }
       throw new BadRequestException({ errorCode: "BAD_REQUEST", message: err.message });
     });
 

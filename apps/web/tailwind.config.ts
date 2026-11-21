@@ -20,21 +20,37 @@ export default {
         primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" },
         secondary: { DEFAULT: "hsl(var(--secondary))", foreground: "hsl(var(--secondary-foreground))" },
         destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },
+        success: { DEFAULT: "hsl(var(--success))" },
         muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
         accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))" },
         card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },
         brand: {
-          navy: { DEFAULT: "#0B1F3A", 50: "#EEF3FA", 100: "#D6E2F2", 600: "#1E3A5F", 700: "#142A47", 800: "#0B1F3A", 900: "#071528" },
-          emerald: { DEFAULT: "#10B981", 50: "#ECFDF5", 400: "#34D399", 500: "#10B981", 600: "#059669", 700: "#047857" },
+          /**
+           * Forest green scale — the primary brand color (#176B4D).
+           * `brand-emerald-*` is the historical class name; values are forest.
+           */
+          emerald: {
+            DEFAULT: "#176B4D",
+            50: "#F3F8F5", 100: "#E7F1EA", 200: "#C2E0D1", 300: "#86C2A4",
+            400: "#4CA278", 500: "#238653", 600: "#176B4D", 700: "#135A41",
+            800: "#0E4733", 900: "#0A3526",
+          },
+          /** Ink scale (deep charcoal-green) for dark surfaces and overlays. */
+          navy: {
+            DEFAULT: "#1E2721",
+            50: "#F2F5F3", 100: "#E4EAE6", 200: "#C9D4CD", 300: "#9DACA3",
+            600: "#3B4740", 700: "#2C362F", 800: "#1E2721", 900: "#141B16",
+          },
         },
       },
       borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" },
       fontFamily: { sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"], mono: ["var(--font-geist-mono)", "monospace"] },
       boxShadow: {
-        soft: "0 1px 2px 0 rgb(16 24 40 / 0.04), 0 1px 3px 0 rgb(16 24 40 / 0.06)",
-        card: "0 1px 3px 0 rgb(16 24 40 / 0.06), 0 1px 2px -1px rgb(16 24 40 / 0.06)",
-        raise: "0 8px 24px -6px rgb(11 31 58 / 0.16)",
+        soft: "0 1px 2px 0 rgb(20 32 25 / 0.05)",
+        card: "0 1px 3px 0 rgb(20 32 25 / 0.05), 0 4px 12px -4px rgb(20 32 25 / 0.05)",
+        raise: "0 12px 32px -8px rgb(20 32 25 / 0.16)",
       },
+      transitionTimingFunction: { swift: "cubic-bezier(0.25, 0.1, 0.25, 1)" },
       keyframes: {
         shimmer: { "100%": { transform: "translateX(100%)" } },
         "pulse-soft": { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0.55" } },

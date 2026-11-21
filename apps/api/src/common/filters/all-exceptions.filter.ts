@@ -41,9 +41,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       errorCode = codeFor(status);
       const body = exception.getResponse();
       if (typeof body === "string") message = body;
-      else if (body && typeof body === "object" && "message" in (body as Record<string, unknown>)) {
-        const m = (body as { message: unknown }).message;
-        message = Array.isArray(m) ? (m as string[]) : String(m);
+      else if (body && typeof body === "object") {
+        const b = body as Record<string, unknown>;
+        if ("message" in b) {
+          const m = b.message;
+          message = Array.isArray(m) ? (m as string[]) : String(m);
+        }
+        // Domain codes (EMAIL_UNCONFIRMED, SERVICE_UNAVAILABLE, …) travel on
+        // the exception body; fall back to the status-derived code otherwise.
+        if (typeof b.errorCode === "string" && b.errorCode.length > 0) {
+          errorCode = b.errorCode;
+        }
       }
     } else if (exception instanceof ZodError) {
       status = HttpStatus.BAD_REQUEST;

@@ -3,8 +3,8 @@
 export { motion, AnimatePresence, useReducedMotion, type Transition } from "motion/react";
 export const pageVariants = {
   hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.28, ease: [0.25, 0.1, 0.25, 1] } },
-  exit: { opacity: 0, y: -6, transition: { duration: 0.18 } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0.25, 0.1, 0.25, 1] } },
+  exit: { opacity: 0, y: -6, transition: { duration: 0.16 } },
 } as const;
 
 export const cardHover = {

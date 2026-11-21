@@ -2,126 +2,95 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarCheck, CreditCard, MapPin, Search, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, CreditCard, MapPin, ShieldCheck } from "lucide-react";
 import { motion } from "@/motion";
 import { api, qs } from "@/lib/api-client";
-import type { TurfCard } from "@turf/shared-types";
+import type { TurfCard as TurfCardData } from "@turf/shared-types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { TurfCard as TurfCardComponent } from "@/components/customer/turf-card";
+import { SearchBar } from "@/components/customer/search-bar";
+import { FeatureCard } from "@/components/customer/feature-card";
 import { todayYmd } from "@/lib/utils";
+
+interface Sport { id: string; name: string; slug: string }
+
+const FALLBACK_SPORTS: Sport[] = [
+  { id: "football", name: "Football", slug: "football-5s" },
+  { id: "cricket", name: "Box cricket", slug: "box-cricket" },
+  { id: "badminton", name: "Badminton", slug: "badminton" },
+];
 
 export default function HomePage() {
   const featured = useQuery({
     queryKey: ["turfs", "featured"],
-    queryFn: () => api.get<{ items: TurfCard[] }>(`/turfs${qs({ page: 1, pageSize: 6 })}`),
+    queryFn: () => api.get<{ items: TurfCardData[] }>(`/turfs${qs({ page: 1, pageSize: 6 })}`),
   });
+  const sports = useQuery({
+    queryKey: ["sports"],
+    queryFn: () => api.get<Sport[]>("/sports"),
+  });
+  const sportChips = (sports.data?.length ? sports.data : FALLBACK_SPORTS).slice(0, 5);
 
   return (
-    <div className="pb-20">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-brand-navy-900 text-white">
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.16]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(90deg, transparent 0 79px, #10B98155 79px 81px), repeating-linear-gradient(0deg, transparent 0 59px, #10B98133 59px 61px)",
-          }}
-        />
-        <div className="container relative grid gap-10 py-16 md:grid-cols-2 md:py-24">
-          <div className="flex flex-col justify-center">
-            <Badge variant="success" className="mb-4 w-fit bg-white/10 text-brand-emerald-400">
-              <Zap className="h-3 w-3" /> Instant confirmation
-            </Badge>
-            <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight md:text-5xl">
-              Book your game,
-              <br />
-              <span className="text-brand-emerald-400">not a queue.</span>
-            </h1>
-            <p className="mt-4 max-w-md text-balance text-white/70">
-              Live slot availability across the city&apos;s best turfs. Reserve in seconds, pay online
-              or at the venue — confirmation is instant.
-            </p>
-            <form action="/explore" className="mt-7 flex max-w-md gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" aria-hidden />
-                <Input
-                  name="search"
-                  placeholder="Search turf, area or sport…"
-                  className="border-white/15 bg-white/10 pl-9 text-white placeholder:text-white/50 focus-visible:ring-brand-emerald-500"
-                  aria-label="Search turfs"
-                />
-              </div>
-              <Button type="submit" size="default" className="bg-brand-emerald-600 text-white hover:bg-brand-emerald-500">
-                Find turf
-              </Button>
-            </form>
-            <div className="mt-6 flex flex-wrap gap-2 text-xs text-white/60">
-              <span className="rounded-full border border-white/15 px-3 py-1">Football 5s</span>
-              <span className="rounded-full border border-white/15 px-3 py-1">Box cricket</span>
-              <span className="rounded-full border border-white/15 px-3 py-1">Badminton</span>
-            </div>
-          </div>
-          <div className="relative hidden items-center justify-center md:flex">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="w-full max-w-sm rounded-2xl border border-white/12 bg-white/[0.06] p-6 backdrop-blur"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-emerald-600/20 text-brand-emerald-400">
-                  <CalendarCheck className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold">Tonight, 9:00 PM</p>
-                  <p className="text-xs text-white/60">GreenArena Football 5s · Andheri West</p>
-                </div>
-              </div>
-              <div className="mt-4 space-y-2 rounded-xl bg-brand-navy-900/60 p-4 text-sm">
-                <div className="flex justify-between text-white/70"><span>Slot (60 min)</span><span>₹1,200</span></div>
-                <div className="flex justify-between text-white/70"><span>Pay at venue</span><span>Available</span></div>
-                <div className="flex justify-between font-semibold text-brand-emerald-400"><span>Confirmed instantly</span><span>✓</span></div>
-              </div>
-            </motion.div>
+    <div>
+      {/* ── Hero — light, centered, no background grid, no overlap tricks ── */}
+      <section className="border-b bg-gradient-to-b from-secondary/60 via-background to-background">
+        <div className="container flex flex-col items-center py-16 text-center md:py-24">
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="text-balance text-4xl font-bold leading-tight tracking-tight md:text-6xl"
+          >
+            Find your game.
+            <br />
+            Book your turf.
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25, delay: 0.08 }}
+            className="mt-5 max-w-xl text-balance text-base text-muted-foreground md:text-lg"
+          >
+            Discover nearby sports venues, check live availability, and reserve your next game in
+            just a few clicks.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.14 }}
+            className="mt-8 flex w-full justify-center"
+          >
+            <SearchBar />
+          </motion.div>
+
+          {/* Popular sports filters */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            {sportChips.map((s) => (
+              <Link
+                key={s.slug}
+                href={`/turfs?sport=${s.slug}`}
+                className="rounded-full border bg-card px-4 py-1.5 text-sm text-muted-foreground shadow-soft transition-all duration-200 hover:border-primary/40 hover:text-foreground"
+              >
+                {s.name}
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Value props */}
-      <section className="container -mt-8 grid gap-4 sm:grid-cols-3">
-        {[
-          { icon: MapPin, title: "Truly nearby", text: "PostGIS-powered distance search ranks venues around you." },
-          { icon: CreditCard, title: "Pay your way", text: "Razorpay online or cash at the venue — same instant confirmation." },
-          { icon: ShieldCheck, title: "No double bookings", text: "Database-enforced slot locks mean what you book is yours." },
-        ].map((v) => (
-          <motion.div
-            key={v.title}
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="rounded-lg border bg-card p-5 shadow-card"
-          >
-            <v.icon className="mb-3 h-5 w-5 text-brand-emerald-600" aria-hidden />
-            <h3 className="font-semibold">{v.title}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{v.text}</p>
-          </motion.div>
-        ))}
-      </section>
-
-      {/* Featured */}
-      <section className="container mt-14">
-        <div className="mb-5 flex items-end justify-between">
+      {/* ── Featured nearby turfs ── */}
+      <section className="container py-14 md:py-16">
+        <div className="mb-6 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Featured turfs</h2>
-            <p className="text-sm text-muted-foreground">Hand-picked venues near you</p>
+            <h2 className="text-2xl font-bold tracking-tight">Featured turfs</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Hand-picked venues near you</p>
           </div>
-          <Link href="/turfs" className="group flex items-center gap-1 text-sm font-medium text-primary">
-            View all <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          <Link href="/turfs" className="group flex shrink-0 items-center gap-1 text-sm font-medium text-primary">
+            View all <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
         </div>
 
@@ -129,7 +98,7 @@ export default function HomePage() {
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-3">
-                <Skeleton className="aspect-[16/10] w-full" />
+                <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
               </div>
@@ -153,8 +122,8 @@ export default function HomePage() {
                 key={turf.id}
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05, duration: 0.3 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ delay: Math.min(i * 0.05, 0.2), duration: 0.22, ease: "easeOut" }}
               >
                 <TurfCardComponent turf={turf} date={todayYmd()} />
               </motion.div>
@@ -163,21 +132,80 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Owner CTA */}
-      <section className="container mt-16">
-        <div className="relative overflow-hidden rounded-2xl bg-brand-navy-800 px-6 py-12 text-white md:px-12">
-          <div aria-hidden className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-emerald-600/20 blur-2xl" />
-          <div className="relative max-w-xl">
-            <h2 className="text-2xl font-bold">Own or manage a turf?</h2>
-            <p className="mt-2 text-white/70">
-              Slots, pricing rules, collections and analytics — run the whole venue from one dashboard.
-              One organization, many locations, many turfs.
+      {/* ── Platform benefits — plain flow, no negative margins, no overlap.
+              Grid: 1 col mobile → 2 cols tablet → 3 cols desktop. ── */}
+      <section className="border-t bg-secondary/40">
+        <div className="container py-14 md:py-16">
+          <div className="mb-8 max-w-xl">
+            <h2 className="text-2xl font-bold tracking-tight">Built for players</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Everything about booking a ground, without the phone calls and WhatsApp groups.
+            </p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <FeatureCard
+              icon={MapPin}
+              title="Truly nearby"
+              description="Find sports venues around you using location-based discovery."
+            />
+            <FeatureCard
+              icon={CreditCard}
+              title="Pay your way"
+              description="Choose online payment or pay at the venue."
+            />
+            <FeatureCard
+              icon={ShieldCheck}
+              title="No double bookings"
+              description="Reliable slot reservations help ensure your selected time is yours."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── How it works — typography and whitespace, not cards ── */}
+      <section className="container py-14 md:py-16">
+        <h2 className="text-2xl font-bold tracking-tight">How it works</h2>
+        <ol className="mt-8 grid gap-8 sm:grid-cols-3">
+          {[
+            {
+              step: "01",
+              title: "Find a venue",
+              text: "Search by name or area, or let Nearby rank venues around you by distance.",
+            },
+            {
+              step: "02",
+              title: "Pick your slot",
+              text: "Live availability for the day you want — morning, afternoon or night game.",
+            },
+            {
+              step: "03",
+              title: "Book and play",
+              text: "Pay online or at the venue. Your confirmation is instant and yours alone.",
+            },
+          ].map((s) => (
+            <li key={s.step} className="relative">
+              <span className="text-sm font-semibold tabular-nums text-primary">{s.step}</span>
+              <h3 className="mt-2 font-semibold">{s.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* ── Owner CTA — soft sage panel ── */}
+      <section className="container pb-16">
+        <div className="rounded-2xl border bg-secondary/60 px-6 py-12 md:px-12">
+          <div className="max-w-xl">
+            <h2 className="text-2xl font-bold tracking-tight">Own or manage a turf?</h2>
+            <p className="mt-2 text-muted-foreground">
+              Slots, pricing rules, collections and analytics — run the whole venue from one
+              dashboard. One organization, many locations, many turfs.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild className="bg-brand-emerald-600 text-white hover:bg-brand-emerald-500">
+              <Button asChild variant="brand">
                 <Link href="/register-owner">List your turf</Link>
               </Button>
-              <Button variant="outline" asChild className="border-white/25 bg-transparent text-white hover:bg-white/10">
+              <Button variant="outline" asChild>
                 <Link href="/about">How it works</Link>
               </Button>
             </div>

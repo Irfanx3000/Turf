@@ -28,7 +28,7 @@ function TurfsBrowser() {
     queryFn: () => api.get<BrowseResponse>(`/turfs${qs({ page, pageSize: 9, search: search || undefined, sport: sport || undefined })}`),
   });
 
-  const totalPages = Math.max(1, Math.ceil(turfs.data?.total ?? 0 / 9));
+  const totalPages = Math.max(1, Math.ceil((turfs.data?.total ?? 0) / 9));
 
   return (
     <div className="container py-10">

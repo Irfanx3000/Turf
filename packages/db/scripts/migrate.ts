@@ -130,18 +130,27 @@ async function status(): Promise<void> {
   }
 }
 
-const command = process.argv[2] ?? "up";
-switch (command) {
-  case "up":
-    await up();
-    break;
-  case "down":
-    await down(Number(process.argv[3] ?? 1));
-    break;
-  case "status":
-    await status();
-    break;
-  default:
-    console.error(`unknown command "${command}" (use up | down [n] | status)`);
-    process.exit(1);
+// tsx transpiles this file as CommonJS (no "type": "module" in package.json),
+// which forbids top-level await — so entry is wrapped in main(), like seed.ts.
+async function main(): Promise<void> {
+  const command = process.argv[2] ?? "up";
+  switch (command) {
+    case "up":
+      await up();
+      break;
+    case "down":
+      await down(Number(process.argv[3] ?? 1));
+      break;
+    case "status":
+      await status();
+      break;
+    default:
+      console.error(`unknown command "${command}" (use up | down [n] | status)`);
+      process.exit(1);
+  }
 }
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

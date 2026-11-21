@@ -54,6 +54,12 @@ export async function seedVenue(pools: DbPools, customerCount = 2): Promise<Test
      RETURNING id`,
     [`Test City ${suffix}`, `test-city-${suffix}`],
   );
+  // The owner's profile must exist before the tenant: tenants.created_by
+  // references profiles(id).
+  await one(
+    `INSERT INTO profiles (id, email, platform_role, full_name) VALUES ($1, $2, 'tenant_owner', 'Test Owner') RETURNING id`,
+    [ownerId, `test-owner-${suffix}@turf.test`],
+  );
   const tenant = await one(
     `INSERT INTO tenants (name, slug, status, city_id, created_by)
      VALUES ($1, $2, 'active', $3, $4) RETURNING id`,
@@ -72,10 +78,6 @@ export async function seedVenue(pools: DbPools, customerCount = 2): Promise<Test
      RETURNING id`,
     [tenant.id, location.id, `Test Turf ${suffix}`, `test-turf-${suffix}`],
   );
-  const owner = await one(
-    `INSERT INTO profiles (id, email, platform_role, full_name) VALUES ($1, $2, 'tenant_owner', 'Test Owner') RETURNING id`,
-    [ownerId, `test-owner-${suffix}@turf.test`],
-  );
   const customers: string[] = [];
   for (let i = 0; i < customerCount; i++) {
     const row = await one(
@@ -84,7 +86,6 @@ export async function seedVenue(pools: DbPools, customerCount = 2): Promise<Test
     );
     customers.push(row.id);
   }
-  void owner;
   return { suffix, cityId: city.id, tenantId: tenant.id, locationId: location.id, turfId: turf.id, ownerId, customers };
 }
 

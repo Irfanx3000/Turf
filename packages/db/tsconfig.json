@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@turf/config": ["../config/src/index.ts"],
+      "@turf/shared-types": ["../shared-types/src/index.ts"]
+    }
+  },
+  "include": ["src", "seed", "../config/src", "../shared-types/src"]
+}

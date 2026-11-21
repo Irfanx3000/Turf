@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Turf design tokens ───────────────────────────────────────────────
+   Minimalist sports-and-lifestyle palette: warm off-white canvas, white
+   cards, forest-green primary, sage accents, soft neutral borders.
+   Dark mode flips to a calm ink-green. All pairs meet WCAG AA contrast.
+   Change the theme globally here — components only use these tokens.
+*/
+@layer base {
+  :root {
+    --background: 80 23% 97%;           /* #F8F9F6 warm off-white */
+    --foreground: 140 12% 14%;          /* #202923 charcoal */
+    --card: 0 0% 100%;                  /* #FFFFFF */
+    --card-foreground: 140 12% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 140 12% 14%;
+    --primary: 159 65% 25%;             /* #176B4D forest green */
+    --primary-foreground: 150 30% 98%;
+    --secondary: 138 26% 92%;           /* #E7F1EA soft sage */
+    --secondary-foreground: 159 40% 16%;
+    --muted: 120 14% 95%;
+    --muted-foreground: 138 5% 46%;     /* #737D76 muted gray */
+    --accent: 138 26% 92%;              /* sage */
+    --accent-foreground: 159 45% 16%;
+    --destructive: 0 53% 54%;           /* #C84C4C */
+    --destructive-foreground: 0 0% 100%;
+    --success: 149 59% 33%;             /* #238653 */
+    --border: 120 9% 91%;               /* #E7EBE7 soft neutral */
+    --input: 120 9% 87%;
+    --ring: 159 55% 32%;
+    --radius: 0.75rem;                  /* 12px */
+  }
+
+  .dark {
+    --background: 140 10% 9%;           /* #141915 calm ink */
+    --foreground: 130 12% 92%;
+    --card: 140 10% 12%;
+    --card-foreground: 130 12% 92%;
+    --popover: 140 10% 12%;
+    --popover-foreground: 130 12% 92%;
+    --primary: 155 47% 45%;             /* lighter forest for dark */
+    --primary-foreground: 155 40% 98%;
+    --secondary: 140 8% 16%;
+    --secondary-foreground: 130 12% 90%;
+    --muted: 140 8% 14%;
+    --muted-foreground: 135 6% 62%;
+    --accent: 155 25% 16%;
+    --accent-foreground: 155 40% 85%;
+    --destructive: 0 45% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 149 55% 45%;
+    --border: 140 8% 20%;
+    --input: 140 8% 24%;
+    --ring: 155 47% 45%;
+  }
+
+  * { @apply border-border; }
+  html { scroll-behavior: smooth; }
+  body { @apply bg-background text-foreground antialiased; font-feature-settings: "cv11", "ss01"; }
+
+  ::selection { @apply bg-primary/20; }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+}
+
+/* Reduced motion: soften everything, always. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

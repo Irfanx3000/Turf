@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node10",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "noEmit": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "declaration": false,
+    "declarationMap": false,
+    "removeComments": false,
+    "strictPropertyInitialization": false,
+    "paths": {
+      "@turf/config": ["../../packages/config/src/index.ts"],
+      "@turf/db": ["../../packages/db/src/index.ts"],
+      "@turf/shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@turf/validation": ["../../packages/validation/src/index.ts"]
+    }
+  },
+  "include": ["src", "test"]
+}

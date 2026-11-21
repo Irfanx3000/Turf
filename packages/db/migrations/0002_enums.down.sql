@@ -1,0 +1,17 @@
+DROP TYPE IF EXISTS review_status;
+DROP TYPE IF EXISTS cancellation_policy;
+DROP TYPE IF EXISTS job_status;
+DROP TYPE IF EXISTS notification_kind;
+DROP TYPE IF EXISTS notification_channel;
+DROP TYPE IF EXISTS pricing_rule_type;
+DROP TYPE IF EXISTS refund_status;
+DROP TYPE IF EXISTS payment_status;
+DROP TYPE IF EXISTS payment_method;
+DROP TYPE IF EXISTS booking_status;
+DROP TYPE IF EXISTS slot_status;
+DROP TYPE IF EXISTS day_of_week;
+DROP TYPE IF EXISTS surface_type;
+DROP TYPE IF EXISTS turf_status;
+DROP TYPE IF EXISTS tenant_status;
+DROP TYPE IF EXISTS tenant_role;
+DROP TYPE IF EXISTS platform_role;

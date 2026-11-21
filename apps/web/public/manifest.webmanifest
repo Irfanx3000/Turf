@@ -1,0 +1,41 @@
+{
+  "name": "Turf \u2014 Sports Turf Booking",
+  "short_name": "Turf",
+  "description": "Discover nearby sports turfs, check live availability and book instantly.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F8F9F6",
+  "theme_color": "#176B4D",
+  "categories": [
+    "sports",
+    "lifestyle",
+    "shopping"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Explore nearby",
+      "url": "/explore"
+    },
+    {
+      "name": "My bookings",
+      "url": "/my-bookings"
+    }
+  ]
+}

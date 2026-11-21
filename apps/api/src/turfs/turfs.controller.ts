@@ -61,6 +61,16 @@ export class TurfsController {
     return this.turfs.availability(slug, query.date);
   }
 
+  @Public()
+  @Get("turfs/id/:turfId/availability")
+  @ApiOperation({ summary: "Slot availability by turf id (used by the booking review step)" })
+  availabilityById(
+    @Param("turfId", ParseUUIDPipe) turfId: string,
+    @ZodQuery(availabilityQuery) query: z.infer<typeof availabilityQuery>,
+  ) {
+    return this.turfs.availabilityById(turfId, query.date);
+  }
+
   /* tenant management */
   @Get("tenants/:tenantId/turfs")
   @UseGuards(TenantMemberGuard)

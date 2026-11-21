@@ -207,7 +207,7 @@ export class PaymentsService {
    * available when the MOCK provider is active (never in Razorpay mode).
    * It goes through the exact same signed-webhook code path as production.
    */
-  async mockPay(orderId: string, userId: string, requestId: string) {
+  async mockPay(input: { orderId?: string; bookingId?: string }, userId: string, requestId: string) {
     const provider = paymentProvider();
     if (provider.name !== "mock") {
       throw new BadRequestException({ errorCode: "BAD_REQUEST", message: "mock pay is disabled when Razorpay is active" });
@@ -221,15 +221,21 @@ export class PaymentsService {
       .select({ payment: payments, booking: bookings })
       .from(payments)
       .innerJoin(bookings, eq(bookings.id, payments.bookingId))
-      .where(eq(payments.providerOrderId, orderId))
+      .where(
+        input.orderId
+          ? eq(payments.providerOrderId, input.orderId)
+          : and(eq(payments.bookingId, input.bookingId!), eq(payments.method, "online"), eq(payments.status, "pending")),
+      )
+      .orderBy(desc(payments.createdAt))
       .limit(1);
     const row0 = payRows[0];
-    if (!row0) throw new NotFoundException({ errorCode: "NOT_FOUND", message: "order not found" });
+    if (!row0) throw new NotFoundException({ errorCode: "NOT_FOUND", message: "pending order not found" });
     // Only the booking's customer can "pay" the mock order.
     if (row0.booking.customerId !== userId) {
-      throw new NotFoundException({ errorCode: "NOT_FOUND", message: "order not found" });
+      throw new NotFoundException({ errorCode: "NOT_FOUND", message: "pending order not found" });
     }
     const payment = row0.payment;
+    const orderId = payment.providerOrderId;
     if (payment.status === "paid") return { alreadyPaid: true };
 
     const { paymentId } = mockCapture(orderId, payment.amountMinor);

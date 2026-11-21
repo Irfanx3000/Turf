@@ -52,6 +52,27 @@ Demo accounts created by the seed (dev-only auth adapter):
 | `npm run db:rollback` | roll back the last migration |
 | `npm run db:seed` | idempotent demo data (Mumbai, 2 turfs, 14 days of slots) |
 
+## The web app
+
+`apps/web` is a Next.js 15 App Router PWA (see `apps/web/README.md`):
+
+- **Customer pages (mobile-first)** — home, browse/filter, nearby search,
+  turf detail with live availability, booking review → checkout →
+  success, my-bookings (cancel/complete payment), notifications, profile.
+- **Tenant dashboard (desktop-first)** — metrics (booked value vs money
+  actually collected vs pending venue dues, occupancy, daily chart),
+  locations, turfs, slot templates + idempotent slot generation, bookings,
+  collections (mark venue payments collected), revenue, staff roles,
+  settings.
+- **Admin console** — platform overview (GMV, tenants, users, audit feed),
+  tenant verify/suspend, user enable/disable, cross-tenant bookings &
+  payments, adapter health.
+- **PWA** — installable, offline fallback, push-ready; the service worker
+  never caches `/api/*`.
+- Browser↔API traffic is **same-origin by default**: the Next server proxies
+  `/api/v1/*` to the NestJS API (`API_PROXY_TARGET`), keeping the session
+  cookie first-party.
+
 ## Documentation
 
 - [Architecture decisions](docs/ARCHITECTURE.md)

@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Turf design tokens ───────────────────────────────────────────────
+   Deep navy + emerald on warm off-white; dark mode flips to deep navy
+   surfaces. All pairs meet WCAG AA contrast.
+*/
+@layer base {
+  :root {
+    --background: 40 33% 98%;          /* warm off-white */
+    --foreground: 215 55% 12%;         /* near-navy ink */
+    --card: 0 0% 100%;
+    --card-foreground: 215 55% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 55% 12%;
+    --primary: 162 84% 39%;            /* emerald 600 */
+    --primary-foreground: 160 90% 98%;
+    --secondary: 215 45% 94%;
+    --secondary-foreground: 215 55% 16%;
+    --muted: 40 20% 94%;
+    --muted-foreground: 215 15% 40%;
+    --accent: 162 76% 94%;
+    --accent-foreground: 162 90% 14%;
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 25% 88%;
+    --input: 215 25% 84%;
+    --ring: 162 84% 39%;
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: 215 60% 7%;          /* deep navy */
+    --foreground: 210 30% 92%;
+    --card: 215 55% 10%;
+    --card-foreground: 210 30% 92%;
+    --popover: 215 55% 10%;
+    --popover-foreground: 210 30% 92%;
+    --primary: 162 72% 45%;            /* emerald 500 for dark */
+    --primary-foreground: 162 90% 98%;
+    --secondary: 215 40% 16%;
+    --secondary-foreground: 210 30% 90%;
+    --muted: 215 40% 14%;
+    --muted-foreground: 215 12% 62%;
+    --accent: 162 50% 14%;
+    --accent-foreground: 162 80% 85%;
+    --destructive: 0 68% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 35% 18%;
+    --input: 215 35% 22%;
+    --ring: 162 72% 45%;
+  }
+
+  * { @apply border-border; }
+  html { scroll-behavior: smooth; }
+  body { @apply bg-background text-foreground antialiased; font-feature-settings: "cv11", "ss01"; }
+
+  ::selection { @apply bg-brand-emerald-500/25; }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  /* Branded gradient hero text */
+  .text-gradient-brand {
+    @apply bg-gradient-to-r from-brand-navy-800 via-brand-navy-600 to-brand-emerald-600 bg-clip-text text-transparent;
+  }
+  .dark .text-gradient-brand {
+    @apply from-white via-brand-emerald-400 to-brand-emerald-500;
+  }
+}
+
+/* Reduced motion: soften everything, always. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

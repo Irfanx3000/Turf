@@ -13,7 +13,7 @@ import type { AuthenticatedUser } from "@turf/shared-types";
 import { DbService } from "../database/db-tokens.js";
 import { PaymentsService } from "./payments.service.js";
 
-const mockPaySchema = z.object({ orderId: z.string().min(6).max(80) });
+const mockPaySchema = z.object({ orderId: z.string().min(6).max(80).optional(), bookingId: z.string().uuid().optional() }).refine((v) => v.orderId || v.bookingId, "orderId or bookingId required");
 const reconcileSchema = z.object({ graceSeconds: z.number().int().min(30).max(86_400).optional() });
 
 @ApiTags("payments")
@@ -53,7 +53,7 @@ export class PaymentsController {
     @ZodBody(mockPaySchema) input: z.infer<typeof mockPaySchema>,
     @Req() req: Request,
   ) {
-    return this.payments.mockPay(input.orderId, user.id, req.requestId);
+    return this.payments.mockPay({ orderId: input.orderId, bookingId: input.bookingId }, user.id, req.requestId);
   }
 
   @Post("payments/orders")

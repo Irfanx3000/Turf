@@ -356,6 +356,17 @@ export class TurfsService {
     };
   }
 
+  /** Public availability by turf id (booking review step). */
+  async availabilityById(turfId: string, date: string) {
+    const rows = await this.db.service
+      .select({ slug: turfs.slug })
+      .from(turfs)
+      .where(eq(turfs.id, turfId))
+      .limit(1);
+    if (rows.length === 0) throw new NotFoundException({ errorCode: "NOT_FOUND", message: "turf not found" });
+    return this.availability(rows[0]!.slug, date);
+  }
+
   /** Public availability: slots for one venue-local date. */
   async availability(slug: string, date: string) {
     if (!isYmd(date)) throw new BadRequestException({ errorCode: "BAD_REQUEST", message: "date must be YYYY-MM-DD" });

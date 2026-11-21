@@ -12,3 +12,4 @@ coverage/
 .vite/
 out/
 .vercel/
+tsconfig.tsbuildinfo

@@ -11,6 +11,8 @@
  */
 import { randomUUID, scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
 import pg from "pg";
+import { loadEnvFile } from "@turf/config";
+loadEnvFile();
 
 const DEMO_PASSWORD = {
   admin: "Admin#12345",

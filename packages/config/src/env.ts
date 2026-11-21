@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+import dotenv from "dotenv";
 import { z } from "zod";
 
 /**
@@ -44,6 +47,9 @@ export const envSchema = z.object({
   // Notification adapters
   EMAIL_PROVIDER: z.enum(["mock", "smtp", "resend"]).default("mock"),
   SMS_PROVIDER: z.enum(["mock", "twilio", "msg91"]).default("mock"),
+
+  // Dev-only JWT secret for the development auth adapter (never production).
+  JWT_DEV_SECRET: z.string().min(16).default("turf-dev-secret-change-me"),
 
   // Platform
   PLATFORM_NAME: z.string().default("Turf"),
@@ -108,3 +114,23 @@ export function razorpayConfigured(env: Env): boolean {
 export const isProd = (env: Env) => env.NODE_ENV === "production";
 export const isTest = (env: Env) => env.NODE_ENV === "test";
 export const isDev = (env: Env) => env.NODE_ENV === "development";
+
+/**
+ * Loads the first existing .env file from the candidates (repo root, app
+ * dir, cwd). Called before parseEnv so scripts and apps share one source of
+ * truth without relying on framework-specific env loading.
+ */
+export function loadEnvFile(candidates: string[] = []): void {
+  const paths = [
+    ...candidates,
+    path.join(process.cwd(), ".env"),
+    path.join(process.cwd(), "..", ".env"),
+    path.join(process.cwd(), "..", "..", ".env"),
+  ];
+  for (const p of paths) {
+    if (existsSync(p)) {
+      dotenv.config({ path: p });
+      return;
+    }
+  }
+}

@@ -16,8 +16,11 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { loadEnvFile } from "@turf/config";
+loadEnvFile();
 
-const migrationsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "migrations");
+const here = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const migrationsDir = path.join(here, "..", "migrations");
 
 async function connect(): Promise<pg.Client> {
   const url = process.env.DATABASE_URL;

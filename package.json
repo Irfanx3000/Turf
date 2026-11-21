@@ -2,12 +2,15 @@
   "name": "turf",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm run dev --workspaces --if-present",
     "dev:web": "npm run dev --workspace=@turf/web",
     "dev:api": "npm run dev --workspace=@turf/api",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace @turf/shared-types --if-present && npm run build --workspace @turf/config --if-present && npm run build --workspace @turf/validation --if-present && npm run build --workspace @turf/db --if-present && npm run build --workspace @turf/api --if-present && npm run build --workspace @turf/web --if-present",
     "build:web": "npm run build --workspace=@turf/web",
     "build:api": "npm run build --workspace=@turf/api",
     "lint": "npm run lint --workspaces --if-present",
@@ -17,11 +20,14 @@
     "db:generate": "npm run db:generate --workspace=@turf/db",
     "db:migrate": "npm run db:migrate --workspace=@turf/db",
     "db:seed": "npm run db:seed --workspace=@turf/db",
-    "db:push": "npm run db:push --workspace=@turf/db"
+    "db:push": "npm run db:push --workspace=@turf/db",
+    "build:packages": "npm run build --workspace @turf/shared-types && npm run build --workspace @turf/config && npm run build --workspace @turf/validation && npm run build --workspace @turf/db"
   },
   "devDependencies": {
     "prettier": "^3.4.2",
     "typescript": "^5.7.2"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

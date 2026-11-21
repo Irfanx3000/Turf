@@ -2,21 +2,20 @@
   "name": "@turf/db",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./schema": "./src/schema.ts",
-    "./client": "./src/client.ts"
+    ".": "./dist/index.js",
+    "./schema": "./dist/schema.js",
+    "./client": "./dist/client.js"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
-    "build": "tsc --noEmit -p tsconfig.json",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json",
     "db:generate": "echo 'migrations are hand-authored SQL in packages/db/migrations'",
-    "db:migrate": "tsx src/migrate.ts up",
-    "db:rollback": "tsx src/migrate.ts down",
+    "db:migrate": "tsx scripts/migrate.ts up",
+    "db:rollback": "tsx scripts/migrate.ts down",
     "db:seed": "tsx seed/seed.ts",
     "db:push": "echo 'use db:migrate; push is unsafe for shared envs'"
   },
@@ -30,5 +29,8 @@
     "@types/pg": "^8.11.10",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

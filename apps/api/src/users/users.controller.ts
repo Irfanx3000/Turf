@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch } from "@nestjs/common";
+import { Controller, Get, Patch } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { eq } from "drizzle-orm";
 import { profiles } from "@turf/db";
@@ -7,7 +7,7 @@ import type { AuthenticatedUser } from "@turf/shared-types";
 import { ZodBody } from "../common/decorators/zod-body.decorator.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { DbService } from "../database/db-tokens.js";
-import { audit } from "../audit-logs/audit.helper.js";
+
 
 @ApiTags("users")
 @Controller("users")

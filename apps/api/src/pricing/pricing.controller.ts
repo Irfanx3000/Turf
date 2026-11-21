@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseUUIDPipe, Post } from "@nestjs/common";
+import { Controller, Param, ParseUUIDPipe, Post } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { ZodBody } from "../common/decorators/zod-body.decorator.js";

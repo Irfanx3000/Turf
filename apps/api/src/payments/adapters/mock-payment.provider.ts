@@ -18,7 +18,7 @@ export function mockCapture(orderId: string, amountMinor: number): { paymentId: 
 export class MockPaymentProvider implements PaymentProvider {
   readonly name = "mock" as const;
 
-  async createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
+  async createOrder(_input: CreateOrderInput): Promise<CreateOrderResult> {
     return {
       provider: "mock",
       orderId: `mock_order_${randomUUID()}`,

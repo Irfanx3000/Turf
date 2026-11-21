@@ -10,10 +10,6 @@ import { z } from "zod";
  * NOTE: the Supabase service-role key is validated here for the API only.
  * The web app must never load or import this schema for service values.
  */
-const booleanish = z
-  .enum(["true", "false", "1", "0"])
-  .transform((v) => v === "true" || v === "1");
-
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_URL: z.string().url().default("http://localhost:3000"),

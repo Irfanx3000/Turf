@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ConflictException } from "@nestjs/common";
 import type { DbPools } from "@turf/db";
 import { cleanupVenue, insertSlot, probePools, realServices, seedVenue, skipTest, type TestVenue } from "./helpers.js";

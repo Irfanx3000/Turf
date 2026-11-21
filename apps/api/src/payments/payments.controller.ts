@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Headers, Param, ParseUUIDPipe, Post, Req, UseGuards } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { z } from "zod";

@@ -1,5 +1,15 @@
 name: CI
 on: [push, pull_request]
+
+env:
+  # Shared test database (matches the postgres service below).
+  DATABASE_URL: postgres://postgres:password@localhost:5432/turf
+  DIRECT_URL: postgres://postgres:password@localhost:5432/turf
+  # The env schema requires these; placeholder values select the dev
+  # adapters for tests (no real Supabase project is involved).
+  SUPABASE_URL: https://ci-placeholder.supabase.co
+  SUPABASE_ANON_KEY: ci-placeholder-anon-key
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -10,15 +20,32 @@ jobs:
           POSTGRES_PASSWORD: password
           POSTGRES_DB: turf
         ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
       redis:
         image: redis:7-alpine
         ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
+      # Lint everywhere first (no build output needed).
       - run: npm run lint
+      # The API's typecheck/tests resolve @turf/* from package dist builds.
+      - run: npm run build:packages
       - run: npm run typecheck
+      # Apply migrations so the DB-gated integration tests (including the
+      # two-clients-one-slot concurrency proof) run for real.
+      - run: npm run db:migrate
       - run: npm run test
+      # Full production build of every workspace (API + web included).
       - run: npm run build

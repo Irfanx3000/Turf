@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req } from "@nestjs/common";
+import { Controller, Delete, Get, Param, Patch, Post, Req } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { createTenantSchema, inviteMemberSchema } from "@turf/validation";
@@ -8,7 +8,7 @@ import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { TenantCtx, TenantRoles } from "../common/decorators/tenant-roles.decorator.js";
 import { TenantMemberGuard } from "../common/guards/tenant-member.guard.js";
 import { UseGuards } from "@nestjs/common";
-import { Roles } from "../common/decorators/roles.decorator.js";
+
 import type { AuthenticatedUser } from "@turf/shared-types";
 import { TenantsService } from "./tenants.service.js";
 

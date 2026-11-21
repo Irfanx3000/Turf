@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { auditLogs, bookings, payments, profiles, tenants, turfs } from "@turf/db";
 import { DbService } from "../database/db-tokens.js";
 import { audit } from "../audit-logs/audit.helper.js";

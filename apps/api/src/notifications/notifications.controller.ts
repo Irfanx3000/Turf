@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseUUIDPipe, Patch, Post, Put } from "@nestjs/common";
+import { Controller, Get, Param, ParseUUIDPipe, Post, Put } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { notifications, notificationPreferences } from "@turf/db";

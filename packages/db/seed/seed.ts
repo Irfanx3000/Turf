@@ -9,7 +9,7 @@
  *   owner@turf.demo   / Owner#12345    (tenant owner)
  *   customer@turf.demo / Customer#12345 (customer)
  */
-import { randomUUID, scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
+import { randomUUID, scryptSync, randomBytes } from "node:crypto";
 import pg from "pg";
 import { loadEnvFile } from "@turf/config";
 loadEnvFile();
@@ -262,7 +262,7 @@ async function main(): Promise<void> {
           );
         }
       }
-      for (const [i, day] of DAYS.entries()) {
+      for (const [, day] of DAYS.entries()) {
         await q(
           `INSERT INTO operating_hours (turf_id, day, opens_at, closes_at, closed)
            VALUES ($1,$2,'06:00','23:30',false) ON CONFLICT (turf_id, day) DO NOTHING`,

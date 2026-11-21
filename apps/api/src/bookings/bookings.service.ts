@@ -2,10 +2,7 @@ import {
   BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException,
 } from "@nestjs/common";
 import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
-import {
-  bookingCancellations, bookingItems, bookingStatusHistory, bookings, notifications,
-  payments, profiles, refunds, tenantMembers, tenants, turfSlots, turfs,
-} from "@turf/db";
+import { bookingCancellations, bookingItems, bookingStatusHistory, bookings, notifications, payments, profiles, refunds, turfSlots, turfs } from "@turf/db";
 import type { BookingSummary, CreateBookingResponse } from "@turf/shared-types";
 import { DbService } from "../database/db-tokens.js";
 import { audit } from "../audit-logs/audit.helper.js";

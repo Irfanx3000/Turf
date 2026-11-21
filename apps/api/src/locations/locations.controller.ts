@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { z } from "zod";
@@ -7,7 +7,7 @@ import { ZodBody } from "../common/decorators/zod-body.decorator.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { TenantCtx, TenantRoles } from "../common/decorators/tenant-roles.decorator.js";
 import { TenantMemberGuard } from "../common/guards/tenant-member.guard.js";
-import { Public } from "../common/guards/public.decorator.js";
+
 import type { AuthenticatedUser } from "@turf/shared-types";
 import { LocationsService } from "./locations.service.js";
 

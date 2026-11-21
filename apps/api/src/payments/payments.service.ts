@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { and, desc, eq, lt, sql } from "drizzle-orm";
-import { bookings, paymentEvents, payments, refunds, turfSlots, turfs } from "@turf/db";
+import { and, desc, eq, lt } from "drizzle-orm";
+import { bookings, paymentEvents, payments, refunds, turfs } from "@turf/db";
 import { DbService } from "../database/db-tokens.js";
 import { logger } from "../common/logging/logger.service.js";
 import { paymentProvider } from "./adapters/index.js";

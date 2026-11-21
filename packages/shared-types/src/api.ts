@@ -1,5 +1,5 @@
 import type {
-  BookingStatus, PaymentMethod, PaymentStatus, PlatformRole, TenantRole, TenantStatus, TurfStatus,
+  BookingStatus, PaymentMethod, PaymentStatus, PlatformRole, TenantRole, TenantStatus,
 } from "./enums.js";
 
 /** Envelope for every list endpoint. */

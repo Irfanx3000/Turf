@@ -1,7 +1,4 @@
-import {
-  BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { eq } from "drizzle-orm";
 import { notificationPreferences, profiles, tenantMembers, tenants } from "@turf/db";
 import type { RegisterInput } from "@turf/validation";
@@ -28,7 +25,6 @@ export class AuthService {
 
   constructor(private readonly db: DbService) {
     // Provider selection is boot-time, explicit and reported by /health.
-    const devVerifier = new DevJwtVerifier();
     this.provider =
       authVerifier() instanceof DevJwtVerifier && process.env.NODE_ENV !== "production"
         ? new DevAuthAdapter(db)

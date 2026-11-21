@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { NOTIFICATION_CHANNELS } from "@turf/shared-types";
-import { uuid } from "./common.js";
+
 
 export const updateNotificationPreferencesSchema = z.object({
   channels: z.array(z.enum(NOTIFICATION_CHANNELS)).min(0).max(4),

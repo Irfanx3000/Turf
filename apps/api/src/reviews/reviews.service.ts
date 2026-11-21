@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { and, desc, eq, sql } from "drizzle-orm";
-import { bookingItems, bookings, profiles, reviews, turfs } from "@turf/db";
+import { and, desc, eq } from "drizzle-orm";
+import { bookings, profiles, reviews, turfs } from "@turf/db";
 import { DbService } from "../database/db-tokens.js";
 import { audit } from "../audit-logs/audit.helper.js";
 

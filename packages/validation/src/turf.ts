@@ -75,6 +75,8 @@ export const nearbySearchSchema = pagination.extend({
   maxPriceMinor: moneyMinor.optional(),
 });
 
+export type CreateTurfInput = z.infer<typeof createTurfSchema>;
+
 export const updateTurfStatusSchema = z.object({
   status: z.enum(["draft", "published", "archived"]),
 });

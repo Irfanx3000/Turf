@@ -5,6 +5,7 @@ loadEnvFile();
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import express from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module.js";
@@ -16,6 +17,10 @@ async function bootstrap(): Promise<void> {
 
   app.use(helmet({ contentSecurityPolicy: ENV.NODE_ENV !== "production" ? false : undefined }));
   app.use(cookieParser());
+
+  // Webhooks need the RAW body for HMAC signature verification. Capture it
+  // before any JSON parser touches the request.
+  app.use("/api/v1/payments/webhook", express.raw({ type: "*/*", limit: "256kb" }));
   app.enableCors({ origin: corsOriginsFor(), credentials: true, exposedHeaders: ["x-request-id"] });
   app.setGlobalPrefix("api/v1");
 

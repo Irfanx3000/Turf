@@ -31,6 +31,7 @@ export const envSchema = z.object({
 
   // Razorpay — all optional: a deterministic mock adapter is used when absent.
   RAZORPAY_KEY_ID: z.string().optional(),
+  PAYMENT_MOCK_SECRET: z.string().min(8).default("mock-webhook-secret"),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
 

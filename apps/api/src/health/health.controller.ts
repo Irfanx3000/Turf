@@ -7,6 +7,7 @@ import { ENV, razorpayActive } from "../config/configuration.js";
 
 import { authVerifier } from "../auth/verifier-provider.js";
 import { DevJwtVerifier } from "../auth/jwt-verifier.js";
+import { mapsProviderName } from "../maps/maps-provider.js";
 
 @ApiTags("health")
 @Controller("health")
@@ -34,7 +35,7 @@ export class HealthController {
         database: db,
         auth: authMode,
         payments: razorpayActive() ? "razorpay" : "mock-adapter",
-        maps: ENV.MAPS_PROVIDER === "mock" ? "mock-adapter" : ENV.MAPS_PROVIDER,
+        maps: `${mapsProviderName()}${ENV.MAPS_PROVIDER !== "mock" ? "" : "-adapter"}`,
         environment: ENV.NODE_ENV,
       },
       // Adapters are reported explicitly — the platform never fakes a provider.

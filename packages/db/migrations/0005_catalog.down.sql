@@ -1,0 +1,10 @@
+ALTER TABLE turfs DROP CONSTRAINT IF EXISTS turfs_tenant_location_match;
+DROP FUNCTION IF EXISTS public.tenant_location_matches(uuid, uuid);
+DROP TABLE IF EXISTS operating_hours;
+DROP TABLE IF EXISTS turf_amenities;
+DROP TABLE IF EXISTS turf_sports;
+DROP TABLE IF EXISTS turf_images;
+DROP TABLE IF EXISTS turfs;
+DROP TABLE IF EXISTS amenities;
+DROP TABLE IF EXISTS sports;
+DROP TABLE IF EXISTS locations;

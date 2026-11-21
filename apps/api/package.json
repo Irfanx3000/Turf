@@ -1,0 +1,6 @@
+{
+  "name": "@turf/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": { "dev": "echo pending", "build": "echo pending", "typecheck": "tsc --noEmit", "test": "echo pending" }
+}

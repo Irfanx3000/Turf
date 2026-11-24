@@ -7,9 +7,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "npm run build:packages && concurrently -n web,api -c cyan,magenta \"npm run dev --workspace=@turf/web\" \"npm run dev --workspace=@turf/api\"",
     "dev:web": "npm run dev --workspace=@turf/web",
-    "dev:api": "npm run dev --workspace=@turf/api",
+    "dev:api": "npm run build:packages && npm run dev --workspace=@turf/api",
     "build": "npm run build --workspace @turf/shared-types --if-present && npm run build --workspace @turf/config --if-present && npm run build --workspace @turf/validation --if-present && npm run build --workspace @turf/db --if-present && npm run build --workspace @turf/api --if-present && npm run build --workspace @turf/web --if-present",
     "build:web": "npm run build --workspace=@turf/web",
     "build:api": "npm run build --workspace=@turf/api",
@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "concurrently": "^10.0.7",
     "eslint": "^9.39.5",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
@@ -32,5 +33,9 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.2"
   }
 }

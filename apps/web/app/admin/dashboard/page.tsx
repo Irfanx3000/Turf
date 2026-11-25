@@ -5,7 +5,7 @@ import { Building2, CreditCard, IndianRupee, Ticket, Users } from "lucide-react"
 import { api } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardPageSkeleton } from "@/components/loading/page-skeletons";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ErrorState } from "@/components/ui/states";
 import { formatMoney, relativeTime } from "@/lib/utils";
@@ -21,7 +21,7 @@ interface AdminDashboard {
 export default function AdminDashboardPage() {
   const data = useQuery({ queryKey: ["admin", "dashboard"], queryFn: () => api.get<AdminDashboard>("/admin/dashboard") });
 
-  if (data.isLoading) return <Skeleton className="h-96" />;
+  if (data.isLoading) return <DashboardPageSkeleton />;
   if (data.isError || !data.data) return <ErrorState onRetry={() => data.refetch()} />;
   const d = data.data;
   const totalBookings = Object.values(d.bookings).reduce((n, b) => n + b.count, 0);

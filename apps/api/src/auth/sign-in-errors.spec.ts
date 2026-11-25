@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { ForbiddenException, ServiceUnavailableException, UnauthorizedException } from "@nestjs/common";
-import { classifySignInError, signInExceptionFor } from "./sign-in-errors.js";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  HttpException,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { classifySignInError, classifySignUpError, signInExceptionFor, signUpExceptionFor } from "./sign-in-errors.js";
 
 /** Simulates the dev adapter's credential rejection. */
 function credentialError(message = "invalid credentials") {
@@ -61,5 +68,57 @@ describe("signInExceptionFor", () => {
     // The internal cause must not be exposed through the public message.
     const body = ex.getResponse() as { message: string };
     expect(body.message).not.toMatch(/ECONNREFUSED|SELECT/i);
+  });
+});
+
+function providerError(message: string, status: number) {
+  const err = new Error(message) as Error & { status?: number };
+  err.status = status;
+  return err;
+}
+
+describe("classifySignUpError", () => {
+  it("classifies invalid email as invalid_email, not unavailable", () => {
+    expect(classifySignUpError(providerError('Email address "haw@gmail.com" is invalid', 400)).kind).toBe(
+      "invalid_email",
+    );
+  });
+
+  it("classifies email rate limit as rate_limited", () => {
+    expect(classifySignUpError(providerError("email rate limit exceeded", 429)).kind).toBe("rate_limited");
+    expect(classifySignUpError(providerError("email rate limit exceeded", 400)).kind).toBe("rate_limited");
+  });
+
+  it("classifies already-registered as already_registered", () => {
+    expect(classifySignUpError(providerError("User already registered", 422)).kind).toBe("already_registered");
+  });
+
+  it("classifies a network failure as unavailable", () => {
+    expect(classifySignUpError(new TypeError("fetch failed")).kind).toBe("unavailable");
+  });
+});
+
+describe("signUpExceptionFor", () => {
+  it("returns 400 INVALID_EMAIL for rejected addresses", () => {
+    const ex = signUpExceptionFor(providerError('Email address "haw@gmail.com" is invalid', 400));
+    expect(ex).toBeInstanceOf(BadRequestException);
+    expect((ex.getResponse() as { errorCode: string }).errorCode).toBe("INVALID_EMAIL");
+  });
+
+  it("returns 429 RATE_LIMITED for signup email throttling", () => {
+    const ex = signUpExceptionFor(providerError("email rate limit exceeded", 429));
+    expect(ex).toBeInstanceOf(HttpException);
+    expect(ex.getStatus()).toBe(429);
+    expect((ex.getResponse() as { errorCode: string }).errorCode).toBe("RATE_LIMITED");
+  });
+
+  it("returns 409 CONFLICT for existing accounts", () => {
+    const ex = signUpExceptionFor(providerError("User already registered", 422));
+    expect(ex).toBeInstanceOf(ConflictException);
+  });
+
+  it("returns 503 for infrastructure failures — never for provider 4xx", () => {
+    const ex = signUpExceptionFor(new TypeError("fetch failed"));
+    expect(ex).toBeInstanceOf(ServiceUnavailableException);
   });
 });

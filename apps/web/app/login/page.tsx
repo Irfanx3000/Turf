@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
@@ -13,10 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { FormError } from "@/components/ui/form-error";
+import { ContentPageSkeleton } from "@/components/loading/page-skeletons";
 import { AuthShell } from "@/components/customer/auth-shell";
+import { useAppRouter } from "@/lib/use-app-router";
 
 function LoginInner() {
-  const router = useRouter();
+  const router = useAppRouter();
   const params = useSearchParams();
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
@@ -154,7 +156,7 @@ function LoginInner() {
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<ContentPageSkeleton dense />}>
       <LoginInner />
     </Suspense>
   );

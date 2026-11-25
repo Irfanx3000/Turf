@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CreditCard, Lock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -13,12 +13,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/states";
 import { Badge } from "@/components/ui/badge";
+import { ContentPageSkeleton } from "@/components/loading/page-skeletons";
+import { useAppRouter } from "@/lib/use-app-router";
 import { formatDate, formatMoney } from "@/lib/utils";
 
 interface BookingDetail extends BookingSummary { items: Array<{ id: string; startsAt: string; endsAt: string; priceMinor: number }> }
 
 function CheckoutInner() {
-  const router = useRouter();
+  const router = useAppRouter();
   const params = useSearchParams();
   const bookingId = params.get("booking") ?? "";
 
@@ -111,5 +113,9 @@ function CheckoutInner() {
 }
 
 export default function CheckoutPage() {
-  return <Suspense><CheckoutInner /></Suspense>;
+  return (
+    <Suspense fallback={<ContentPageSkeleton dense />}>
+      <CheckoutInner />
+    </Suspense>
+  );
 }

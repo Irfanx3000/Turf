@@ -87,13 +87,13 @@ export function Navbar() {
                 <DropdownMenuLabel className="text-xs text-muted-foreground">{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {user.memberships.length > 0 && (
-                  <DropdownMenuItem onClick={() => (window.location.href = "/tenant/dashboard")}>
-                    <LayoutDashboard /> Tenant dashboard
+                  <DropdownMenuItem asChild>
+                    <Link href="/tenant/dashboard"><LayoutDashboard /> Tenant dashboard</Link>
                   </DropdownMenuItem>
                 )}
                 {user.platformRole === "super_admin" && (
-                  <DropdownMenuItem onClick={() => (window.location.href = "/admin/dashboard")}>
-                    <LayoutDashboard /> Admin console
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/dashboard"><LayoutDashboard /> Admin console</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>

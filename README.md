@@ -27,7 +27,8 @@ cp .env.example .env
 npm run db:migrate
 npm run db:seed
 
-# 5. run both apps
+# 5. compile workspace packages, then run both apps
+npm run build:packages
 npm run dev
 #   web  → http://localhost:3000
 #   api  → http://localhost:4000/api/v1 (+ /api/v1/docs for Swagger)

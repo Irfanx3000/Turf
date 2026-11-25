@@ -38,7 +38,14 @@ export default function TenantSettingsPage() {
     onError: (err: Error) => toast.error(err.message || "Save failed"),
   });
 
-  if (tenant.isLoading || !tenant.data) return <Skeleton className="h-64" />;
+  if (tenant.isLoading || !tenant.data) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

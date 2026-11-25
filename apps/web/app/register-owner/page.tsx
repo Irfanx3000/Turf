@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Building2 } from "lucide-react";
@@ -13,9 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { AuthShell } from "@/components/customer/auth-shell";
+import { useAppRouter } from "@/lib/use-app-router";
 
 export default function RegisterOwnerPage() {
-  const router = useRouter();
+  const router = useAppRouter();
   const qc = useQueryClient();
   const [form, setForm] = useState({ fullName: "", email: "", phone: "", password: "", organizationName: "", city: "Mumbai" });
   const [error, setError] = useState<string | null>(null);

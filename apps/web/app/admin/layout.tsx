@@ -5,8 +5,8 @@ import {
   Ban, CreditCard, LayoutDashboard, ScrollText, Settings, Ticket, Users, Zap,
 } from "lucide-react";
 import { DashboardShell, type NavItem } from "@/components/dashboard/shell";
+import { DashboardPageSkeleton } from "@/components/loading/page-skeletons";
 import { ErrorState } from "@/components/ui/states";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/lib/use-session";
 
 const NAV: NavItem[] = [
@@ -26,7 +26,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <DashboardShell title="Platform console" subtitle="Super admin" nav={NAV}>
       {isLoading ? (
-        <Skeleton className="h-64" />
+        <DashboardPageSkeleton />
       ) : user?.platformRole !== "super_admin" ? (
         <ErrorState title="Super admin access required" message="This console is restricted to platform administrators." />
       ) : (

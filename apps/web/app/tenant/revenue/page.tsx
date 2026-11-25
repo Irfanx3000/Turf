@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Banknote, CreditCard, TrendingUp, Wallet } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardPageSkeleton } from "@/components/loading/page-skeletons";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ErrorState } from "@/components/ui/states";
 import { useTenantId } from "@/lib/use-tenant";
@@ -26,7 +26,7 @@ export default function TenantRevenuePage() {
     enabled: Boolean(tenantId),
   });
 
-  if (overview.isLoading) return <Skeleton className="h-96" />;
+  if (overview.isLoading) return <DashboardPageSkeleton />;
   if (overview.isError || !overview.data) return <ErrorState onRetry={() => overview.refetch()} />;
   const f = overview.data.financial;
   const maxDaily = Math.max(1, ...overview.data.daily.map((x) => Number(x.bookedValueMinor)));

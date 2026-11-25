@@ -1,8 +1,17 @@
-import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
-import { eq } from "drizzle-orm";
-import { notificationPreferences, profiles, tenantMembers, tenants } from "@turf/db";
-import type { RegisterInput } from "@turf/validation";
+import { createHash, randomBytes } from "node:crypto";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { and, eq, gt, isNull, sql } from "drizzle-orm";
+import { notificationPreferences, passwordResetTokens, profiles, tenantMembers, tenants } from "@turf/db";
+import type { ForgotPasswordInput, RegisterInput, ResetPasswordInput } from "@turf/validation";
+import { ENV } from "../config/configuration.js";
 import { DbService } from "../database/db-tokens.js";
+import { EmailService } from "../email/email.service.js";
 import { audit } from "../audit-logs/audit.helper.js";
 import { logger } from "../common/logging/logger.service.js";
 import { serviceUnavailableException, signInExceptionFor, signUpExceptionFor } from "./sign-in-errors.js";
@@ -11,6 +20,12 @@ import { authVerifier } from "./verifier-provider.js";
 import { DevAuthAdapter } from "./adapters/dev-auth.adapter.js";
 import { SupabaseAuthAdapter } from "./adapters/supabase-auth.adapter.js";
 import type { AuthProviderAdapter } from "./adapters/auth-provider.js";
+
+const RESET_TTL_MS = 60 * 60 * 1000;
+const GENERIC_RESET_ACK = {
+  ok: true as const,
+  message: "If that email is registered, a reset link is on its way.",
+};
 
 export interface AuthResult {
   accessToken: string;
@@ -23,7 +38,10 @@ export interface AuthResult {
 export class AuthService {
   private provider: AuthProviderAdapter;
 
-  constructor(private readonly db: DbService) {
+  constructor(
+    private readonly db: DbService,
+    private readonly email: EmailService,
+  ) {
     // Provider selection is boot-time, explicit and reported by /health.
     this.provider =
       authVerifier() instanceof DevJwtVerifier && process.env.NODE_ENV !== "production"
@@ -265,12 +283,176 @@ export class AuthService {
     return { accessToken: token, expiresIn: "12h", user: { id, email, platformRole: role, fullName }, emailConfirmationPending: false };
   }
 
+  /**
+   * Start a password reset. Always returns the same acknowledgement so the
+   * response does not reveal whether the email exists.
+   *
+   * Supabase mode: delegates to Auth `resetPasswordForEmail` (Supabase sends
+   * the mail). Dev-adapter mode: mints a local token and logs the link.
+   */
+  async requestPasswordReset(input: ForgotPasswordInput, requestId: string): Promise<typeof GENERIC_RESET_ACK> {
+    const email = input.email.trim().toLowerCase();
+    const redirectTo = `${ENV.APP_URL.replace(/\/$/, "")}/reset-password`;
+
+    if (this.provider.name === "supabase") {
+      try {
+        // Supabase Auth sends the recovery email (and does not enumerate accounts).
+        await this.provider.requestPasswordReset(email, redirectTo);
+      } catch (err) {
+        const status = (err as { status?: number } | undefined)?.status;
+        const message = err instanceof Error ? err.message : String(err);
+        if (status === 429 || /rate limit/i.test(message)) {
+          throw new BadRequestException({
+            errorCode: "RATE_LIMITED",
+            message: "too many reset attempts — please wait a minute and try again",
+          });
+        }
+        logger.error({ requestId, err: message, status }, "forgot-password: supabase unavailable");
+        throw serviceUnavailableException("password reset");
+      }
+      await audit(this.db.service, {
+        requestId,
+        action: "auth.password_reset_requested",
+        entityType: "profile",
+        after: { email, provider: "supabase" },
+      });
+      return GENERIC_RESET_ACK;
+    }
+
+    // ── Dev-adapter path (no Supabase mail) ──────────────────────────────
+    let profile: { id: string; email: string; fullName: string | null; isActive: boolean } | undefined;
+    try {
+      const rows = await this.db.service
+        .select({
+          id: profiles.id,
+          email: profiles.email,
+          fullName: profiles.fullName,
+          isActive: profiles.isActive,
+        })
+        .from(profiles)
+        .where(sql`lower(${profiles.email}) = ${email}`)
+        .limit(1);
+      profile = rows[0];
+    } catch (err) {
+      logger.error({ requestId, err }, "forgot-password: profile lookup failed");
+      throw serviceUnavailableException("password reset");
+    }
+
+    if (!profile || !profile.isActive) {
+      return GENERIC_RESET_ACK;
+    }
+
+    const rawToken = randomBytes(32).toString("base64url");
+    const tokenHash = hashResetToken(rawToken);
+    const expiresAt = new Date(Date.now() + RESET_TTL_MS);
+
+    try {
+      await this.db.service
+        .update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(and(eq(passwordResetTokens.userId, profile.id), isNull(passwordResetTokens.usedAt)));
+      await this.db.service.insert(passwordResetTokens).values({
+        userId: profile.id,
+        tokenHash,
+        expiresAt,
+      });
+    } catch (err) {
+      logger.error({ requestId, err }, "forgot-password: token persist failed");
+      throw serviceUnavailableException("password reset");
+    }
+
+    const resetUrl = `${redirectTo}?token=${encodeURIComponent(rawToken)}`;
+    try {
+      await this.email.sendPasswordReset({
+        to: profile.email,
+        fullName: profile.fullName,
+        resetUrl,
+        requestId,
+      });
+    } catch (err) {
+      logger.error({ requestId, err }, "forgot-password: email send failed");
+      throw serviceUnavailableException("password reset");
+    }
+
+    await audit(this.db.service, {
+      requestId,
+      action: "auth.password_reset_requested",
+      entityType: "profile",
+      entityId: profile.id,
+      after: { email: profile.email, provider: "dev" },
+    });
+
+    return GENERIC_RESET_ACK;
+  }
+
+  /**
+   * Consume a *local* (dev-adapter) reset token and set a new password.
+   * Supabase recovery links update the password in the browser via the
+   * Supabase client — they do not hit this endpoint.
+   */
+  async resetPassword(input: ResetPasswordInput, requestId: string): Promise<{ ok: true }> {
+    const tokenHash = hashResetToken(input.token);
+    let row: { id: string; userId: string } | undefined;
+    try {
+      const rows = await this.db.service
+        .select({
+          id: passwordResetTokens.id,
+          userId: passwordResetTokens.userId,
+        })
+        .from(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.tokenHash, tokenHash),
+            isNull(passwordResetTokens.usedAt),
+            gt(passwordResetTokens.expiresAt, new Date()),
+          ),
+        )
+        .limit(1);
+      row = rows[0];
+    } catch (err) {
+      logger.error({ requestId, err }, "reset-password: token lookup failed");
+      throw serviceUnavailableException("password reset");
+    }
+
+    if (!row) {
+      throw new BadRequestException({
+        errorCode: "INVALID_RESET_TOKEN",
+        message: "this reset link is invalid or has expired — request a new one",
+      });
+    }
+
+    try {
+      await this.provider.updatePassword(row.userId, input.password);
+    } catch (err) {
+      logger.error({ requestId, err }, "reset-password: provider update failed");
+      throw serviceUnavailableException("password reset");
+    }
+
+    await this.db.service
+      .update(passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokens.id, row.id));
+
+    await audit(this.db.service, {
+      requestId,
+      action: "auth.password_reset_completed",
+      entityType: "profile",
+      entityId: row.userId,
+    });
+
+    return { ok: true };
+  }
+
   /** Used by the seed/tests to confirm a dev credential exists. */
   async devCredentialsAvailable(): Promise<boolean> {
     return this.provider instanceof DevAuthAdapter
       ? (this.provider as DevAuthAdapter).available()
       : Promise.resolve(false);
   }
+}
+
+function hashResetToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 export function slugify(input: string): string {

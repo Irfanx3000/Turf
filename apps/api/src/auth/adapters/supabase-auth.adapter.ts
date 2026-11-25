@@ -85,4 +85,19 @@ export class SupabaseAuthAdapter implements AuthProviderAdapter {
     }
     return { id: data.user!.id, email, accessToken: data.session.access_token };
   }
+
+  async requestPasswordReset(email: string, redirectTo: string): Promise<void> {
+    // Supabase owns the email template + delivery (Authentication → Emails).
+    // Add redirectTo under Authentication → URL Configuration → Redirect URLs.
+    const { error } = await this.client.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw toProviderError(error, error.status ?? 400);
+  }
+
+  async updatePassword(userId: string, password: string): Promise<void> {
+    if (!this.admin) {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY is required to reset passwords");
+    }
+    const { error } = await this.admin.auth.admin.updateUserById(userId, { password });
+    if (error) throw toProviderError(error);
+  }
 }

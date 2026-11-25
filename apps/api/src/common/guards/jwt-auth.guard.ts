@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { profiles, tenantMembers, tenants } from "@turf/db";
 import type { AuthenticatedUser } from "@turf/shared-types";
 import { IS_PUBLIC_KEY } from "./public.decorator.js";
@@ -26,9 +26,9 @@ export class JwtAuthGuard implements CanActivate {
     ]);
     const req = context.switchToHttp().getRequest();
     if (isPublic) {
-      // Optional identity: attach user when a valid token is present.
-      const token = extractToken(req);
-      if (token) req.user = await this.loadUser(token).catch(() => undefined);
+      // Public handlers do not read req.user today. Skipping optional auth
+      // avoids a JWT verify + 2 DB queries on every browse/detail/availability
+      // hit for logged-in users (the main soft-nav tax with little data).
       return true;
     }
 
@@ -41,7 +41,12 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private async loadUser(token: string): Promise<AuthenticatedUser> {
-    const verified = await authVerifier().verify(token);
+    let verified;
+    try {
+      verified = await authVerifier().verify(token);
+    } catch {
+      throw new UnauthorizedException({ errorCode: "UNAUTHORIZED", message: "invalid or expired session" });
+    }
 
     const rows = await this.db.service
       .select({
@@ -62,6 +67,8 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException({ errorCode: "UNAUTHORIZED", message: "account not found or disabled" });
     }
 
+    // Include pending_verification so new owners can open the dashboard without
+    // a second /tenants/mine round-trip. Suspended orgs stay excluded.
     const memberships = await this.db.service
       .select({
         tenantId: tenantMembers.tenantId,
@@ -70,7 +77,7 @@ export class JwtAuthGuard implements CanActivate {
       })
       .from(tenantMembers)
       .innerJoin(tenants, eq(tenants.id, tenantMembers.tenantId))
-      .where(and(eq(tenantMembers.userId, profile.id), eq(tenants.status, "active")));
+      .where(and(eq(tenantMembers.userId, profile.id), ne(tenants.status, "suspended")));
 
     return {
       id: profile.id,

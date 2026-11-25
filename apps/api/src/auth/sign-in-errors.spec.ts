@@ -27,6 +27,13 @@ describe("classifySignInError", () => {
     expect(classifySignInError(credentialError()).kind).toBe("invalid_credentials");
   });
 
+  it("classifies Supabase 400 invalid_credentials as invalid credentials (not unavailable)", () => {
+    const err = new Error("Invalid login credentials") as Error & { status?: number; code?: string };
+    err.status = 400;
+    err.code = "invalid_credentials";
+    expect(classifySignInError(err).kind).toBe("invalid_credentials");
+  });
+
   it("classifies Supabase 'Email not confirmed' as unconfirmed, not invalid credentials", () => {
     const err = credentialError("Email not confirmed");
     expect(classifySignInError(err).kind).toBe("email_unconfirmed");

@@ -10,6 +10,16 @@ import { useEffect } from "react";
 export function PwaRegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
+
+    // Locally, an old SW will serve /offline whenever Next isn't up — confusing
+    // during restarts. Unregister in development; only register in production.
+    if (process.env.NODE_ENV !== "production") {
+      void navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (const reg of regs) void reg.unregister();
+      });
+      return;
+    }
+
     const onMessage = (event: MessageEvent) => {
       if (event.data?.type === "SW_OFFLINE_FALLBACK") {
         window.dispatchEvent(new CustomEvent("turf:offline"));

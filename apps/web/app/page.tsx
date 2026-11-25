@@ -94,7 +94,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {featured.isLoading && (
+        {featured.isPending && !featured.data && (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-3">

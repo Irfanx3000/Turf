@@ -590,6 +590,30 @@ export const auditLogs = pgTable(
   ],
 );
 
+/* ── Password resets ──────────────────────────────────────────────────── */
+
+/**
+ * Single-use password reset tokens. The opaque token is emailed; only a
+ * SHA-256 hash is stored. turf_service owns this table (BYPASSRLS).
+ */
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("password_reset_tokens_user_idx").on(t.userId, t.createdAt),
+    index("password_reset_tokens_expiry_idx").on(t.expiresAt),
+  ],
+);
+
 /* ── Local dev auth (NOT used in production) ───────────────────────────── */
 
 /**

@@ -39,6 +39,23 @@ export class DevAuthAdapter implements AuthProviderAdapter {
     return { id: user.id, email };
   }
 
+  async requestPasswordReset(_email: string, _redirectTo: string): Promise<void> {
+    // No Supabase mail in dev-adapter mode — AuthService handles a local token.
+  }
+
+  async updatePassword(userId: string, password: string): Promise<void> {
+    const updated = await this.db.service
+      .update(devUsers)
+      .set({ passwordHash: devPasswordHasher.hash(password) })
+      .where(eq(devUsers.id, userId))
+      .returning({ id: devUsers.id });
+    if (updated.length === 0) {
+      const err = new Error("user not found") as Error & { status?: number };
+      err.status = 404;
+      throw err;
+    }
+  }
+
   /** Table exists only in dev deployments; guard for safety. */
   async available(): Promise<boolean> {
     const res = await this.db.service.execute<{ ok: boolean }>(

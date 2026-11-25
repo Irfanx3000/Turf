@@ -4,7 +4,13 @@ import type { Request, Response } from "express";
 import { ZodBody } from "../common/decorators/zod-body.decorator.js";
 import { Public } from "../common/guards/public.decorator.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
-import { loginSchema, registerOwnerSchema, registerSchema } from "@turf/validation";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerOwnerSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from "@turf/validation";
 import type { AuthenticatedUser } from "@turf/shared-types";
 import { AuthService } from "./auth.service.js";
 
@@ -55,6 +61,28 @@ export class AuthController {
     const result = await this.auth.login(input.email, input.password, req.requestId);
     if (result.accessToken) setSessionCookie(res, result.accessToken);
     return result;
+  }
+
+  @Public()
+  @Post("forgot-password")
+  @HttpCode(200)
+  @ApiOperation({ summary: "Request a password-reset email (always acknowledges)" })
+  forgotPassword(
+    @ZodBody(forgotPasswordSchema) input: ReturnType<typeof forgotPasswordSchema.parse>,
+    @Req() req: Request,
+  ) {
+    return this.auth.requestPasswordReset(input, req.requestId);
+  }
+
+  @Public()
+  @Post("reset-password")
+  @HttpCode(200)
+  @ApiOperation({ summary: "Set a new password using a single-use reset token" })
+  resetPassword(
+    @ZodBody(resetPasswordSchema) input: ReturnType<typeof resetPasswordSchema.parse>,
+    @Req() req: Request,
+  ) {
+    return this.auth.resetPassword(input, req.requestId);
   }
 
   @Public()

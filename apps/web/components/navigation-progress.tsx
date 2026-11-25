@@ -5,12 +5,18 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { onNavigationStart } from "@/lib/navigation-events";
 import { cn } from "@/lib/utils";
 
+/** Hard cap — never leave the bar stuck if the URL never settles. */
+const SAFETY_MS = 6_000;
+const HIDE_MS = 220;
+
 /**
  * Top progress bar for App Router navigations.
  *
  * Next soft-nav keeps the previous page painted until the next segment is
  * ready, which feels like a hang with no feedback. We start the bar on
  * same-origin link clicks / form navigations and finish when the URL settles.
+ * A safety timer always clears the bar even if navigation is cancelled or
+ * the destination matches the current URL.
  */
 function NavigationProgressInner() {
   const pathname = usePathname();
@@ -21,12 +27,15 @@ function NavigationProgressInner() {
   const activeRef = useRef(false);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const safetyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearTimers = useCallback(() => {
     if (tickRef.current) clearInterval(tickRef.current);
     if (hideRef.current) clearTimeout(hideRef.current);
+    if (safetyRef.current) clearTimeout(safetyRef.current);
     tickRef.current = null;
     hideRef.current = null;
+    safetyRef.current = null;
   }, []);
 
   const finish = useCallback(() => {
@@ -37,13 +46,14 @@ function NavigationProgressInner() {
     hideRef.current = setTimeout(() => {
       setVisible(false);
       setValue(0);
-    }, 220);
+    }, HIDE_MS);
   }, [clearTimers]);
 
   const start = useCallback(() => {
-    if (activeRef.current) return;
-    activeRef.current = true;
+    // Allow re-start while active so a second click resets the safety timer
+    // instead of leaving a stuck bar from a cancelled first navigation.
     clearTimers();
+    activeRef.current = true;
     setVisible(true);
     setValue(12);
     tickRef.current = setInterval(() => {
@@ -53,7 +63,13 @@ function NavigationProgressInner() {
         return Math.min(92, current + step);
       });
     }, 180);
-  }, [clearTimers]);
+
+    // Soft-nav finishes via the URL effect; this guarantees we never stick at 92%
+    // when navigation is cancelled or the destination matches the current URL.
+    safetyRef.current = setTimeout(() => {
+      if (activeRef.current) finish();
+    }, SAFETY_MS);
+  }, [clearTimers, finish]);
 
   useEffect(() => {
     finish();
@@ -67,9 +83,9 @@ function NavigationProgressInner() {
       if (anchor.hasAttribute("download")) return true;
       if (href.startsWith("mailto:") || href.startsWith("tel:")) return true;
       try {
-        const url = new URL(href, window.location.href);
-        if (url.origin !== window.location.origin) return true;
-        if (`${url.pathname}${url.search}` === `${window.location.pathname}${window.location.search}`) {
+        const next = new URL(href, window.location.href);
+        if (next.origin !== window.location.origin) return true;
+        if (`${next.pathname}${next.search}` === `${window.location.pathname}${window.location.search}`) {
           return true;
         }
       } catch {
@@ -96,6 +112,7 @@ function NavigationProgressInner() {
       window.removeEventListener("popstate", onPopState);
       unsubscribe();
       clearTimers();
+      activeRef.current = false;
     };
   }, [start, clearTimers]);
 

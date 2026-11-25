@@ -27,40 +27,60 @@ const NAV: NavItem[] = [
 ];
 
 export default function TenantLayout({ children }: { children: ReactNode }) {
-  const { data: user, isLoading: sessionLoading } = useSession();
+  const { data: user, isPending: sessionPending } = useSession();
+  const membership = user?.memberships[0];
+
+  // Status badge only — never blocks children. Tenant id comes from session.
   const tenants = useQuery({
     queryKey: ["tenants", "mine"],
     queryFn: () => api.get<TenantSummary[]>("/tenants/mine"),
-    enabled: Boolean(user),
+    enabled: Boolean(membership?.tenantId),
+    staleTime: 5 * 60_000,
   });
-
   const tenant = tenants.data?.[0];
 
-  return (
-    <DashboardShell
-      title={tenant?.name ?? "Tenant dashboard"}
-      subtitle={tenant ? `${tenant.city ?? ""} · ${tenant.status.replace(/_/g, " ")}`.trim() : "Your organization"}
-      nav={NAV}
-      badge={
-        tenant && (
-          <Badge variant={tenant.status === "active" ? "success" : "warning"} className="w-full justify-center">
-            {tenant.status.replace(/_/g, " ")}
-          </Badge>
-        )
-      }
-    >
-      {sessionLoading || tenants.isLoading ? (
+  // Only block when we have no cached session yet.
+  if (sessionPending && !user) {
+    return (
+      <DashboardShell title="Tenant dashboard" subtitle="Your organization" nav={NAV}>
         <DashboardPageSkeleton />
-      ) : !user ? (
+      </DashboardShell>
+    );
+  }
+
+  if (!user) {
+    return (
+      <DashboardShell title="Tenant dashboard" subtitle="Your organization" nav={NAV}>
         <ErrorState title="Sign in required" message="Sign in with an owner or staff account to view this dashboard." />
-      ) : user.memberships.length === 0 ? (
+      </DashboardShell>
+    );
+  }
+
+  if (!membership) {
+    return (
+      <DashboardShell title="Tenant dashboard" subtitle="Your organization" nav={NAV}>
         <ErrorState
           title="No organization yet"
           message="Create an organization to start managing turfs."
         />
-      ) : (
-        children
-      )}
+      </DashboardShell>
+    );
+  }
+
+  return (
+    <DashboardShell
+      title={tenant?.name ?? membership.tenantName}
+      subtitle={tenant ? `${tenant.city ?? ""} · ${tenant.status.replace(/_/g, " ")}`.trim() : "Your organization"}
+      nav={NAV}
+      badge={
+        tenant ? (
+          <Badge variant={tenant.status === "active" ? "success" : "warning"} className="w-full justify-center">
+            {tenant.status.replace(/_/g, " ")}
+          </Badge>
+        ) : undefined
+      }
+    >
+      {children}
     </DashboardShell>
   );
 }

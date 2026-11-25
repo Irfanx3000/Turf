@@ -50,17 +50,29 @@ export function isProviderClientError(err: unknown): boolean {
   return status !== undefined && status >= 400 && status < 500;
 }
 
+const INVALID_CREDENTIALS_PATTERNS = [/invalid (login )?credentials/i, /invalid_credentials/i];
+
 export function classifySignInError(err: unknown): { kind: SignInFailureKind; cause: string } {
   const status = providerStatus(err);
   const message = providerMessage(err);
+  const code = (err as { code?: string } | undefined)?.code;
 
-  if (status === 401 || err instanceof UnauthorizedException) {
-    // Credential rejections from the provider — Supabase distinguishes
-    // unconfirmed accounts in the message; the dev adapter does not need to.
+  // Supabase Auth returns 400 + code "invalid_credentials" (not 401) for bad
+  // passwords. Treat all provider 4xx credential rejections as client errors.
+  const credentialRejection =
+    status === 401 ||
+    err instanceof UnauthorizedException ||
+    code === "invalid_credentials" ||
+    ((status === 400 || status === 422) && INVALID_CREDENTIALS_PATTERNS.some((re) => re.test(message)));
+
+  if (credentialRejection) {
     if (UNCONFIRMED_PATTERNS.some((re) => re.test(message))) {
       return { kind: "email_unconfirmed", cause: message };
     }
     return { kind: "invalid_credentials", cause: message };
+  }
+  if (UNCONFIRMED_PATTERNS.some((re) => re.test(message)) && isProviderClientError(err)) {
+    return { kind: "email_unconfirmed", cause: message };
   }
   // Anything else (ECONNREFUSED, fetch failed, timeouts, unexpected shapes)
   // is an infrastructure problem, never a credential verdict.

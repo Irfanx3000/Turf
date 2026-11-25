@@ -10,6 +10,14 @@ import type { BookingSummary } from "@turf/shared-types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { formatDate, formatMoney, formatTime } from "@/lib/utils";
@@ -26,6 +34,7 @@ const statusVariant: Record<string, "success" | "warning" | "secondary" | "destr
 export default function MyBookingsPage() {
   const qc = useQueryClient();
   const [status, setStatus] = useState<(typeof STATUS_TABS)[number]>("all");
+  const [pendingCancel, setPendingCancel] = useState<BookingSummary | null>(null);
 
   const bookings = useQuery({
     queryKey: ["bookings", "mine", status],
@@ -35,6 +44,7 @@ export default function MyBookingsPage() {
   const cancel = useMutation({
     mutationFn: (bookingId: string) => api.post<{ refundDueMinor: number }>(`/bookings/${bookingId}/cancel`, {}),
     onSuccess: (result) => {
+      setPendingCancel(null);
       toast.success("Booking cancelled", {
         description: result.refundDueMinor > 0 ? `Refund of ${formatMoney(result.refundDueMinor)} is being processed.` : undefined,
       });
@@ -96,10 +106,7 @@ export default function MyBookingsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    loading={cancel.isPending && cancel.variables === b.id}
-                    onClick={() => {
-                      if (confirm(`Cancel ${b.reference}? The venue's cancellation policy applies.`)) cancel.mutate(b.id);
-                    }}
+                    onClick={() => setPendingCancel(b)}
                   >
                     <CalendarX2 /> Cancel
                   </Button>
@@ -109,6 +116,48 @@ export default function MyBookingsPage() {
           </Card>
         ))}
       </div>
+
+      <Dialog
+        open={pendingCancel !== null}
+        onOpenChange={(open) => {
+          if (!open && !cancel.isPending) setPendingCancel(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel this booking?</DialogTitle>
+            <DialogDescription>
+              {pendingCancel ? (
+                <>
+                  You&apos;re about to cancel <span className="font-mono text-foreground">{pendingCancel.reference}</span>
+                  {" "}at <span className="text-foreground">{pendingCancel.turfName}</span>
+                  {" "}({formatDate(pendingCancel.startsAt)} · {formatTime(pendingCancel.startsAt)}).
+                  The venue&apos;s cancellation policy still applies.
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              disabled={cancel.isPending}
+              onClick={() => setPendingCancel(null)}
+            >
+              Keep booking
+            </Button>
+            <Button
+              variant="destructive"
+              loading={cancel.isPending}
+              disabled={!pendingCancel || cancel.isPending}
+              onClick={() => {
+                if (pendingCancel) cancel.mutate(pendingCancel.id);
+              }}
+            >
+              <CalendarX2 /> Confirm cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

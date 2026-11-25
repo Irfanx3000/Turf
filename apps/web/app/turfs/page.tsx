@@ -27,6 +27,7 @@ function TurfsBrowser() {
   const turfs = useQuery({
     queryKey: ["turfs", "browse", search, sport, page],
     queryFn: () => api.get<BrowseResponse>(`/turfs${qs({ page, pageSize: 9, search: search || undefined, sport: sport || undefined })}`),
+    placeholderData: (previous) => previous,
   });
 
   const totalPages = Math.max(1, Math.ceil((turfs.data?.total ?? 0) / 9));
@@ -70,7 +71,7 @@ function TurfsBrowser() {
         </div>
       </div>
 
-      {turfs.isLoading && (
+      {turfs.isPending && !turfs.data && (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-64" />)}
         </div>

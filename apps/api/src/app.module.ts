@@ -7,6 +7,7 @@ import { JwtAuthGuard } from "./common/guards/jwt-auth.guard.js";
 import { RolesGuard } from "./common/guards/roles.guard.js";
 import { ENV } from "./config/configuration.js";
 import { HealthModule } from "./health/health.module.js";
+import { EmailModule } from "./email/email.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { UsersModule } from "./users/users.module.js";
 import { MapsModule } from "./maps/maps.module.js";
@@ -37,6 +38,7 @@ import { AuditLogsModule } from "./audit-logs/audit-logs.module.js";
       },
     ]),
     DatabaseModule,
+    EmailModule,
     HealthModule,
     AuthModule,
     UsersModule,

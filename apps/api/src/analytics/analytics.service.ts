@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { and, eq, gte, lt, sql } from "drizzle-orm";
-import { bookings, payments, turfSlots } from "@turf/db";
+import { bookings, payments, turfSlots, turfs } from "@turf/db";
 import { DbService } from "../database/db-tokens.js";
 
 /**
@@ -16,49 +16,75 @@ export class AnalyticsService {
   async overview(tenantId: string, from: Date, to: Date) {
     const window = and(gte(bookings.createdAt, from), lt(bookings.createdAt, to), eq(bookings.tenantId, tenantId));
 
-    const byStatus = await this.db.service
-      .select({ status: bookings.bookingStatus, count: sql<number>`COUNT(*)::int`, value: sql<number>`COALESCE(SUM(${bookings.totalAmountMinor}),0)::bigint` })
-      .from(bookings)
-      .where(window)
-      .groupBy(bookings.bookingStatus);
-
-    const collected = await this.db.service
-      .select({
-        method: payments.method,
-        amount: sql<number>`COALESCE(SUM(${payments.amountMinor}),0)::bigint`,
-        count: sql<number>`COUNT(*)::int`,
-      })
-      .from(payments)
-      .innerJoin(bookings, eq(bookings.id, payments.bookingId))
-      .where(and(eq(bookings.tenantId, tenantId), eq(payments.status, "paid"), gte(payments.paidAt, from), lt(payments.paidAt, to)))
-      .groupBy(payments.method);
-
-    const pendingVenue = await this.db.service
-      .select({ amount: sql<number>`COALESCE(SUM(${payments.amountMinor}),0)::bigint`, count: sql<number>`COUNT(*)::int` })
-      .from(payments)
-      .innerJoin(bookings, eq(bookings.id, payments.bookingId))
-      .where(and(eq(bookings.tenantId, tenantId), eq(payments.method, "pay_at_venue"), eq(payments.status, "pending")))
-      .limit(1);
-
-    // Occupancy: booked slots / all future-or-recent slots in the window.
-    const occupancy = await this.db.service
-      .select({
-        total: sql<number>`COUNT(*)::int`,
-        booked: sql<number>`COUNT(*) FILTER (WHERE ${turfSlots.status} IN ('booked','reserved'))::int`,
-      })
-      .from(turfSlots)
-      .where(and(gte(turfSlots.startsAt, from), lt(turfSlots.startsAt, to)))
-
-    const daily = await this.db.service
-      .select({
-        day: sql<string>`to_char(${bookings.createdAt}, 'YYYY-MM-DD')`,
-        bookedValueMinor: sql<number>`COALESCE(SUM(${bookings.totalAmountMinor}),0)::bigint`,
-        count: sql<number>`COUNT(*)::int`,
-      })
-      .from(bookings)
-      .where(window)
-      .groupBy(sql`to_char(${bookings.createdAt}, 'YYYY-MM-DD')`)
-      .orderBy(sql`to_char(${bookings.createdAt}, 'YYYY-MM-DD')`);
+    // Independent aggregates — run in parallel instead of 5 sequential round-trips.
+    const [byStatus, collected, pendingVenue, occupancy, daily] = await Promise.all([
+      this.db.service
+        .select({
+          status: bookings.bookingStatus,
+          count: sql<number>`COUNT(*)::int`,
+          value: sql<number>`COALESCE(SUM(${bookings.totalAmountMinor}),0)::bigint`,
+        })
+        .from(bookings)
+        .where(window)
+        .groupBy(bookings.bookingStatus),
+      this.db.service
+        .select({
+          method: payments.method,
+          amount: sql<number>`COALESCE(SUM(${payments.amountMinor}),0)::bigint`,
+          count: sql<number>`COUNT(*)::int`,
+        })
+        .from(payments)
+        .innerJoin(bookings, eq(bookings.id, payments.bookingId))
+        .where(
+          and(
+            eq(bookings.tenantId, tenantId),
+            eq(payments.status, "paid"),
+            gte(payments.paidAt, from),
+            lt(payments.paidAt, to),
+          ),
+        )
+        .groupBy(payments.method),
+      this.db.service
+        .select({
+          amount: sql<number>`COALESCE(SUM(${payments.amountMinor}),0)::bigint`,
+          count: sql<number>`COUNT(*)::int`,
+        })
+        .from(payments)
+        .innerJoin(bookings, eq(bookings.id, payments.bookingId))
+        .where(
+          and(
+            eq(bookings.tenantId, tenantId),
+            eq(payments.method, "pay_at_venue"),
+            eq(payments.status, "pending"),
+          ),
+        )
+        .limit(1),
+      // Occupancy must be tenant-scoped — scanning all slots was both wrong and slow.
+      this.db.service
+        .select({
+          total: sql<number>`COUNT(*)::int`,
+          booked: sql<number>`COUNT(*) FILTER (WHERE ${turfSlots.status} IN ('booked','reserved'))::int`,
+        })
+        .from(turfSlots)
+        .innerJoin(turfs, eq(turfs.id, turfSlots.turfId))
+        .where(
+          and(
+            eq(turfs.tenantId, tenantId),
+            gte(turfSlots.startsAt, from),
+            lt(turfSlots.startsAt, to),
+          ),
+        ),
+      this.db.service
+        .select({
+          day: sql<string>`to_char(${bookings.createdAt}, 'YYYY-MM-DD')`,
+          bookedValueMinor: sql<number>`COALESCE(SUM(${bookings.totalAmountMinor}),0)::bigint`,
+          count: sql<number>`COUNT(*)::int`,
+        })
+        .from(bookings)
+        .where(window)
+        .groupBy(sql`to_char(${bookings.createdAt}, 'YYYY-MM-DD')`)
+        .orderBy(sql`to_char(${bookings.createdAt}, 'YYYY-MM-DD')`),
+    ]);
 
     const collectedOnline = collected.find((c) => c.method === "online");
     const collectedVenue = collected.find((c) => c.method === "pay_at_venue");

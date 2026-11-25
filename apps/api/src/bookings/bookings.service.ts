@@ -88,7 +88,10 @@ export class BookingsService {
       }
       for (const slot of slots) {
         if (slot.status !== "available") {
-          throw new ConflictException({ errorCode: "CONFLICT", message: `slot ${slot.id} is no longer available` });
+          throw new ConflictException({
+            errorCode: "SLOT_TAKEN",
+            message: "this slot was just booked by someone else",
+          });
         }
         if (slot.startsAt.getTime() <= now.getTime()) {
           throw new BadRequestException({ errorCode: "BAD_REQUEST", message: "cannot book a slot that already started" });
@@ -127,7 +130,10 @@ export class BookingsService {
           .where(and(eq(turfSlots.id, slot.id), eq(turfSlots.status, "available")))
           .returning({ id: turfSlots.id });
         if (claimed.length === 0) {
-          throw new ConflictException({ errorCode: "CONFLICT", message: `slot ${slot.id} was just taken` });
+          throw new ConflictException({
+            errorCode: "SLOT_TAKEN",
+            message: "this slot was just booked by someone else",
+          });
         }
       }
 

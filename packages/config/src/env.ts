@@ -43,6 +43,10 @@ export const envSchema = z.object({
 
   // Notification adapters
   EMAIL_PROVIDER: z.enum(["mock", "smtp", "resend"]).default("mock"),
+  /** Resend API key — required when EMAIL_PROVIDER=resend. */
+  RESEND_API_KEY: z.string().min(1).optional(),
+  /** From address, e.g. "Turf <noreply@yourdomain.com>". Defaults to Resend's onboarding sender in mock/dev. */
+  EMAIL_FROM: z.string().min(3).default("Turf <onboarding@resend.dev>"),
   SMS_PROVIDER: z.enum(["mock", "twilio", "msg91"]).default("mock"),
 
   // Dev-only JWT secret for the development auth adapter (never production).

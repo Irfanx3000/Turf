@@ -1,19 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, MapPin, Star } from "lucide-react";
 import { motion } from "@/motion";
 import type { TurfCard as TurfCardData } from "@turf/shared-types";
 import { Badge } from "@/components/ui/badge";
+import { prefetchTurf } from "@/lib/prefetch";
 import { formatDistance, formatMoney } from "@/lib/utils";
 
 export function TurfCard({ turf, date, className }: { turf: TurfCardData; date?: string; className?: string }) {
+  const queryClient = useQueryClient();
   const href = date ? `/turfs/${turf.slug}?date=${date}` : `/turfs/${turf.slug}`;
   return (
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
       className={className}
+      onPointerEnter={() => prefetchTurf(queryClient, turf.slug, date)}
+      onFocusCapture={() => prefetchTurf(queryClient, turf.slug, date)}
     >
       <Link
         href={href}

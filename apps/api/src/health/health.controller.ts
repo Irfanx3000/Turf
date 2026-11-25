@@ -7,12 +7,16 @@ import { ENV, razorpayActive } from "../config/configuration.js";
 
 import { authVerifier } from "../auth/verifier-provider.js";
 import { DevJwtVerifier } from "../auth/jwt-verifier.js";
+import { EmailService } from "../email/email.service.js";
 import { mapsProviderName } from "../maps/maps-provider.js";
 
 @ApiTags("health")
 @Controller("health")
 export class HealthController {
-  constructor(private readonly db: DbService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly email: EmailService,
+  ) {}
 
   @Public()
   @Get()
@@ -34,6 +38,7 @@ export class HealthController {
       checks: {
         database: db,
         auth: authMode,
+        email: this.email.providerName === "mock" ? "mock-adapter" : this.email.providerName,
         payments: razorpayActive() ? "razorpay" : "mock-adapter",
         maps: `${mapsProviderName()}${ENV.MAPS_PROVIDER !== "mock" ? "" : "-adapter"}`,
         environment: ENV.NODE_ENV,

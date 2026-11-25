@@ -26,6 +26,14 @@ export interface AuthProviderAdapter {
   readonly name: "supabase" | "dev";
   signUp(email: string, password: string): Promise<SignUpResult>;
   signIn(email: string, password: string): Promise<SignInResult>;
+  /**
+   * Start a password reset for `email`.
+   * Supabase: sends its Auth recovery email (redirectTo must be allow-listed).
+   * Dev: no-op — AuthService mints a local token and logs the link via mock email.
+   */
+  requestPasswordReset(email: string, redirectTo: string): Promise<void>;
+  /** Replace the user's password after a verified local reset-token flow (dev). */
+  updatePassword(userId: string, password: string): Promise<void>;
 }
 
 export const devPasswordHasher = {

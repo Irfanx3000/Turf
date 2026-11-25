@@ -12,9 +12,13 @@ export function Providers({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30_000,
+            // Most screens are small reads; keep them fresh in memory so soft
+            // navigations paint from cache instead of waiting on another proxy hop.
+            staleTime: 5 * 60_000,
+            gcTime: 30 * 60_000,
             retry: 1,
             refetchOnWindowFocus: false,
+            refetchOnMount: false,
           },
         },
       }),

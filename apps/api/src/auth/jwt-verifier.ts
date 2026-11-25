@@ -28,14 +28,13 @@ const supabaseWellKnown = (url: string) => `${url.replace(/\/$/, "")}/auth/v1/.w
 @Injectable()
 export class SupabaseJwtVerifier implements JwtVerifier {
   private jwks = createRemoteJWKSet(new URL(supabaseWellKnown(ENV.SUPABASE_URL)));
-  private audience = ENV.SUPABASE_URL.startsWith("http://localhost")
-    ? "authenticated"
-    : new URL(ENV.SUPABASE_URL).host.split(".")[0]!;
 
   async verify(token: string): Promise<VerifiedToken> {
+    // Hosted and local Supabase both mint access tokens with aud "authenticated"
+    // (not the project ref). Requiring the project ref rejects every real session.
     const { payload } = await jwtVerify(token, this.jwks, {
       issuer: `${ENV.SUPABASE_URL.replace(/\/$/, "")}/auth/v1`,
-      audience: this.audience,
+      audience: "authenticated",
     });
     return { sub: String(payload.sub), email: payload.email as string | undefined };
   }

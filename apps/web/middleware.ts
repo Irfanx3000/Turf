@@ -21,7 +21,8 @@ export function middleware(request: NextRequest) {
   if (hasSession) return NextResponse.next();
 
   const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("next", pathname);
+  // Keep query string (e.g. booking id) so progress survives sign-in.
+  loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
   return NextResponse.redirect(loginUrl);
 }
 

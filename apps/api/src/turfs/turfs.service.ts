@@ -389,13 +389,16 @@ export class TurfsService {
       .where(and(eq(turfSlots.turfId, detail.id), gte(turfSlots.startsAt, start), lte(turfSlots.startsAt, end)))
       .orderBy(asc(turfSlots.startsAt));
 
+    const now = Date.now();
     return {
       turfId: detail.id,
       turfName: detail.name,
       date,
       timezone: tz,
+      // Past starts are not bookable — omit them so the UI never offers morning
+      // (or any) slots that have already started for the selected day.
       slots: rows
-        .filter((s) => s.status !== "expired")
+        .filter((s) => s.status !== "expired" && s.startsAt.getTime() > now)
         .map((s) => ({
           id: s.id,
           startsAt: s.startsAt.toISOString(),

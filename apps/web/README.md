@@ -56,7 +56,7 @@ npm run lint        # ESLint (next/core-web-vitals + TS rules)
 | `/checkout` | Pay online (mock gateway in dev; Razorpay slot when configured) |
 | `/booking-success` | Confirmation (confirms from the API, never from optimism) |
 | `/my-bookings` | History, status tabs, cancel, complete payment |
-| `/login`, `/register`, `/register-owner`, `/forgot-password`, `/verify` | Auth |
+| `/login`, `/register`, `/register-owner`, `/forgot-password`, `/reset-password`, `/verify` | Auth |
 | `/notifications` | Inbox + mark read |
 | `/profile` | Own profile |
 | `/about`, `/contact`, `/offline` | Static + PWA offline fallback |

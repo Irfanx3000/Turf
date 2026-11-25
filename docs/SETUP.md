@@ -134,8 +134,29 @@ the payload instead of delivering (reported honestly, never faked).
 
 ### Email / SMS
 
-`EMAIL_PROVIDER` (`mock`/`smtp`/`resend`) and `SMS_PROVIDER`
-(`mock`/`twilio`/`msg91`) — mock adapters log instead of sending.
+| Variable | Notes |
+|---|---|
+| `EMAIL_PROVIDER` | `mock` (default) / `resend` / `smtp` — used for *app* transactional mail later; **password reset uses Supabase Auth email** when Supabase is configured |
+| `RESEND_API_KEY` | Optional; only if you later send app mail via Resend |
+| `EMAIL_FROM` | From header for Resend/app mail |
+| `SMS_PROVIDER` | `mock` / `twilio` / `msg91` — mock logs instead of sending |
+
+### Password reset (Supabase Auth)
+
+When Supabase credentials are set, reset mail is **Supabase Auth**, not Resend:
+
+1. `POST /api/v1/auth/forgot-password` → `supabase.auth.resetPasswordForEmail`
+2. User opens the Supabase email link → `{APP_URL}/reset-password`
+3. The web app establishes the recovery session and calls `supabase.auth.updateUser({ password })`
+
+In the Supabase dashboard, add these under **Authentication → URL Configuration**:
+
+- Site URL: `http://localhost:3000` (or your production origin)
+- Redirect URLs: `http://localhost:3000/reset-password` (and the production equivalent)
+
+Configure the sender under **Authentication → Emails** (Supabase built-in or custom SMTP).
+
+Dev-adapter mode (no Supabase) still logs a local `?token=` link via the mock email adapter.
 
 ### Booking engine tuning
 
@@ -147,8 +168,12 @@ the payload instead of delivering (reported honestly, never faked).
 
 | Variable | Default | Notes |
 |---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | | Same project URL as `SUPABASE_URL` — required in the **repo-root** `.env` (Next loads it via `next.config.mjs`) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | | Public anon key — required for password-reset recovery in the browser |
 | `NEXT_PUBLIC_API_URL` | `/api/v1` (same-origin) | Browser API base. Same-origin by default: the Next server proxies `/api/v1/*` to the API so cookies stay first-party and no CORS is needed. Set an absolute URL when the API lives on another origin. |
 | `API_PROXY_TARGET` | `http://localhost:4000` | Server-only: where the Next rewrite proxy forwards `/api/v1/*` |
+
+Keep a single `.env` at the repo root. After changing `NEXT_PUBLIC_*` values, **restart** `npm run dev` (Next inlines them at startup).
 
 ## Health checks
 

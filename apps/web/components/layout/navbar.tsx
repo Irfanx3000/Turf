@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { LayoutDashboard, LogOut, MapPin, Menu, Ticket, Trophy, User, Bell, X } from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "@/motion";
 import { Button } from "@/components/ui/button";
 
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { prefetchBrowse, prefetchTenantDashboard } from "@/lib/prefetch";
 import { useLogout, useSession } from "@/lib/use-session";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -37,9 +39,11 @@ export function Logo({ className }: { className?: string }) {
 
 export function Navbar() {
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { data: user } = useSession();
   const logout = useLogout();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const tenantId = user?.memberships[0]?.tenantId;
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur-md">
@@ -52,6 +56,9 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
+              onPointerEnter={() => {
+                if (link.href === "/turfs") prefetchBrowse(queryClient);
+              }}
               className={cn(
                 "rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-accent-foreground",
                 pathname.startsWith(link.href) && "bg-accent text-accent-foreground",
@@ -88,7 +95,14 @@ export function Navbar() {
                 <DropdownMenuSeparator />
                 {user.memberships.length > 0 && (
                   <DropdownMenuItem asChild>
-                    <Link href="/tenant/dashboard"><LayoutDashboard /> Tenant dashboard</Link>
+                    <Link
+                      href="/tenant/dashboard"
+                      onPointerEnter={() => {
+                        if (tenantId) prefetchTenantDashboard(queryClient, tenantId);
+                      }}
+                    >
+                      <LayoutDashboard /> Tenant dashboard
+                    </Link>
                   </DropdownMenuItem>
                 )}
                 {user.platformRole === "super_admin" && (

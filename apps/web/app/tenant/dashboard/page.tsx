@@ -30,7 +30,7 @@ export default function TenantDashboardPage() {
     enabled: Boolean(tenantId),
   });
 
-  if (overview.isLoading) return <DashboardPageSkeleton />;
+  if (overview.isPending && !overview.data) return <DashboardPageSkeleton />;
   if (overview.isError || !overview.data) return <ErrorState onRetry={() => overview.refetch()} message="Could not load metrics." />;
   const d = overview.data;
   const maxDaily = Math.max(1, ...d.daily.map((x) => Number(x.bookedValueMinor)));

@@ -70,7 +70,7 @@ them out-of-band for any shared environment (see `docs/SETUP.md`).
 
 ### 3. Auth
 Production: Supabase Auth issues JWTs; the API verifies signature, issuer and
-audience (`SUPABASE_URL` + project ref audience) via JWKS. The API never sees
+audience (`aud: "authenticated"`) via JWKS. The API never sees
 passwords.
 Development without Supabase: a **dev adapter** verifies scrypt credentials in
 the `dev_users` table (migration `0014`) and signs short-lived HS256 JWTs with

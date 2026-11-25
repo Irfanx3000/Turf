@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -35,7 +35,10 @@ function TurfDetailInner() {
   const availability = useQuery({
     queryKey: ["availability", slug, date],
     queryFn: () => api.get<AvailabilityResponse>(`/turfs/${slug}/availability${qs({ date })}`),
+    staleTime: 30_000,
+    refetchOnMount: true,
     refetchInterval: 60_000, // availability revalidates; cache is never authoritative
+    placeholderData: (previous) => previous,
   });
   const reviews = useQuery({
     queryKey: ["reviews", detail.data?.id],
@@ -45,21 +48,45 @@ function TurfDetailInner() {
 
   const week = useMemo(() => Array.from({ length: 7 }, (_, i) => addDaysYmd(todayYmd(), i)), []);
 
+  const bookableSlots = useMemo(() => {
+    const now = Date.now();
+    // Defense in depth with the API filter: never show slots that already started.
+    return (availability.data?.slots ?? []).filter((s) => new Date(s.startsAt).getTime() > now);
+  }, [availability.data]);
+
   const grouped = useMemo(() => {
-    const slots = availability.data?.slots ?? [];
     const bucket = (h: number) => (h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening");
     const groups = new Map<string, SlotView[]>();
-    for (const s of slots) {
-      const local = new Date(s.startsAt).toLocaleString("en-IN", { hour: "numeric", hour12: false, timeZone: availability.data?.timezone ?? "Asia/Kolkata" });
+    const tz = availability.data?.timezone ?? "Asia/Kolkata";
+    for (const s of bookableSlots) {
+      const local = new Date(s.startsAt).toLocaleString("en-IN", {
+        hour: "numeric",
+        hour12: false,
+        timeZone: tz,
+      });
       const key = bucket(Number(local));
       groups.set(key, [...(groups.get(key) ?? []), s]);
     }
     return groups;
-  }, [availability.data]);
+  }, [availability.data?.timezone, bookableSlots]);
 
-  const selectedTotal = (availability.data?.slots ?? [])
+  const selectedTotal = bookableSlots
     .filter((s) => selected.has(s.id))
     .reduce((sum, s) => sum + s.priceMinor, 0);
+
+  // Drop selections that fell into the past (or left the payload) after a refresh.
+  useEffect(() => {
+    const ids = new Set(bookableSlots.map((s) => s.id));
+    setSelected((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (ids.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [bookableSlots]);
 
   function toggleSlot(slot: SlotView) {
     setSelected((prev) => {
@@ -70,7 +97,7 @@ function TurfDetailInner() {
     });
   }
 
-  if (detail.isLoading) {
+  if (detail.isPending && !detail.data) {
     return (
       <div className="container space-y-4 py-10">
         <Skeleton className="aspect-[21/9] w-full" />
@@ -176,8 +203,11 @@ function TurfDetailInner() {
 
           {availability.isLoading && <div className="grid grid-cols-2 gap-2 sm:grid-cols-4"><Skeleton className="h-16" /><Skeleton className="h-16" /><Skeleton className="h-16" /><Skeleton className="h-16" /></div>}
           {availability.isError && <ErrorState message="Could not load availability." onRetry={() => availability.refetch()} />}
-          {availability.data && availability.data.slots.length === 0 && (
-            <EmptyState title="No slots for this date" description="The venue may not have generated slots yet — check another date." />
+          {availability.data && bookableSlots.length === 0 && (
+            <EmptyState
+              title="No bookable slots for this date"
+              description="Earlier times may have passed, or the venue has not published slots yet — try another day."
+            />
           )}
 
           {availability.data && grouped.size > 0 && (

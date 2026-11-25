@@ -36,8 +36,9 @@ function LoginInner() {
     onSuccess: async (me) => {
       setError(null);
       qc.setQueryData(["session"], me);
+      // Prefer the page the user came from (e.g. booking review with slots in the query).
       const next = params.get("next");
-      if (next && next.startsWith("/") && !next.startsWith("//")) {
+      if (next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login")) {
         router.push(next);
         return;
       }

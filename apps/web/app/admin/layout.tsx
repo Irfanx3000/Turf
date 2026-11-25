@@ -21,17 +21,28 @@ const NAV: NavItem[] = [
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { data: user, isLoading } = useSession();
+  const { data: user, isPending } = useSession();
+
+  // Keep the shell painted when a cached session exists; only skeleton on cold load.
+  if (isPending && !user) {
+    return (
+      <DashboardShell title="Platform console" subtitle="Super admin" nav={NAV}>
+        <DashboardPageSkeleton />
+      </DashboardShell>
+    );
+  }
+
+  if (user?.platformRole !== "super_admin") {
+    return (
+      <DashboardShell title="Platform console" subtitle="Super admin" nav={NAV}>
+        <ErrorState title="Super admin access required" message="This console is restricted to platform administrators." />
+      </DashboardShell>
+    );
+  }
 
   return (
     <DashboardShell title="Platform console" subtitle="Super admin" nav={NAV}>
-      {isLoading ? (
-        <DashboardPageSkeleton />
-      ) : user?.platformRole !== "super_admin" ? (
-        <ErrorState title="Super admin access required" message="This console is restricted to platform administrators." />
-      ) : (
-        children
-      )}
+      {children}
     </DashboardShell>
   );
 }

@@ -1,11 +1,11 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { eq } from "drizzle-orm";
 import { notificationPreferences, profiles, tenantMembers, tenants } from "@turf/db";
 import type { RegisterInput } from "@turf/validation";
 import { DbService } from "../database/db-tokens.js";
 import { audit } from "../audit-logs/audit.helper.js";
 import { logger } from "../common/logging/logger.service.js";
-import { isInfrastructureError, serviceUnavailableException, signInExceptionFor } from "./sign-in-errors.js";
+import { serviceUnavailableException, signInExceptionFor, signUpExceptionFor } from "./sign-in-errors.js";
 import { DevJwtVerifier } from "./jwt-verifier.js";
 import { authVerifier } from "./verifier-provider.js";
 import { DevAuthAdapter } from "./adapters/dev-auth.adapter.js";
@@ -49,13 +49,15 @@ export class AuthService {
     }
 
     const signUp = await this.provider.signUp(input.email, input.password).catch((err: Error & { status?: number }) => {
-      // Providers mark client errors (weak password, existing auth user) with
-      // a 400; anything else is infrastructure and must not surface as one.
-      if (isInfrastructureError(err) || (err.status !== undefined && err.status >= 500)) {
+      // Adapters stamp 4xx for client rejections (invalid email, weak password,
+      // rate limits). Those must surface honestly — not as a fake 503.
+      const failure = signUpExceptionFor(err);
+      if (failure.getStatus() >= 500) {
         logger.error({ requestId, err: err.message }, "register: auth provider unavailable");
-        throw serviceUnavailableException("sign-up");
+      } else {
+        logger.warn({ requestId, status: failure.getStatus(), err: err.message }, "register: rejected");
       }
-      throw new BadRequestException({ errorCode: "BAD_REQUEST", message: err.message });
+      throw failure;
     });
 
     await this.db.service.transaction(async (tx) => {
@@ -80,15 +82,17 @@ export class AuthService {
       after: { email: signUp.email },
     });
 
-    if (signUp.pendingConfirmation) {
+    if (signUp.pendingConfirmation || !signUp.accessToken) {
+      // Either email confirmation is required, or the provider created the
+      // user without a session. Don't try to mint a JWT in Supabase mode.
       return {
-        accessToken: "",
-        expiresIn: "0s",
+        accessToken: signUp.accessToken ?? "",
+        expiresIn: signUp.accessToken ? "1h" : "0s",
         user: { id: signUp.id, email: signUp.email, platformRole: "customer", fullName: input.fullName ?? null },
-        emailConfirmationPending: true,
+        emailConfirmationPending: Boolean(signUp.pendingConfirmation) || !signUp.accessToken,
       };
     }
-    return this.issueFor(signUp.id, signUp.email, "customer", input.fullName ?? null, undefined);
+    return this.issueFor(signUp.id, signUp.email, "customer", input.fullName ?? null, signUp.accessToken);
   }
 
   async login(email: string, password: string, requestId: string): Promise<AuthResult> {
@@ -172,11 +176,13 @@ export class AuthService {
     }
 
     const signUp = await this.provider.signUp(input.email, input.password).catch((err: Error & { status?: number }) => {
-      if (isInfrastructureError(err) || (err.status !== undefined && err.status >= 500)) {
+      const failure = signUpExceptionFor(err);
+      if (failure.getStatus() >= 500) {
         logger.error({ requestId, err: err.message }, "register-owner: auth provider unavailable");
-        throw serviceUnavailableException("sign-up");
+      } else {
+        logger.warn({ requestId, status: failure.getStatus(), err: err.message }, "register-owner: rejected");
       }
-      throw new BadRequestException({ errorCode: "BAD_REQUEST", message: err.message });
+      throw failure;
     });
 
     const slug = slugify(input.organizationName);
@@ -216,19 +222,19 @@ export class AuthService {
       after: { name: input.organizationName, slug },
     });
 
-    if (signUp.pendingConfirmation) {
+    if (signUp.pendingConfirmation || !signUp.accessToken) {
       return {
         auth: {
-          accessToken: "",
-          expiresIn: "0s",
+          accessToken: signUp.accessToken ?? "",
+          expiresIn: signUp.accessToken ? "1h" : "0s",
           user: { id: signUp.id, email: signUp.email, platformRole: "tenant_owner", fullName: input.fullName },
-          emailConfirmationPending: true,
+          emailConfirmationPending: Boolean(signUp.pendingConfirmation) || !signUp.accessToken,
         },
         tenantId,
       };
     }
     return {
-      auth: await this.issueFor(signUp.id, signUp.email, "tenant_owner", input.fullName, undefined),
+      auth: await this.issueFor(signUp.id, signUp.email, "tenant_owner", input.fullName, signUp.accessToken),
       tenantId,
     };
   }
@@ -244,8 +250,17 @@ export class AuthService {
     if (providerToken) {
       return { accessToken: providerToken, expiresIn: "1h", user: { id, email, platformRole: role, fullName }, emailConfirmationPending: false };
     }
-    // Dev mode: sign our own short-lived token.
-    const verifier = authVerifier() as DevJwtVerifier;
+    // Dev mode only: mint our own short-lived HS256 token. SupabaseJwtVerifier
+    // cannot sign — callers must pass providerToken when authMode is supabase.
+    const verifier = authVerifier();
+    if (!(verifier instanceof DevJwtVerifier)) {
+      return {
+        accessToken: "",
+        expiresIn: "0s",
+        user: { id, email, platformRole: role, fullName },
+        emailConfirmationPending: true,
+      };
+    }
     const token = await verifier.sign(id, email, role);
     return { accessToken: token, expiresIn: "12h", user: { id, email, platformRole: role, fullName }, emailConfirmationPending: false };
   }

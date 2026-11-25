@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Compass, LocateFixed } from "lucide-react";
 import { toast } from "sonner";
@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/states";
+import { TurfGridSkeleton } from "@/components/loading/page-skeletons";
 import { TurfCard } from "@/components/customer/turf-card";
+import { useAppRouter } from "@/lib/use-app-router";
 import { todayYmd } from "@/lib/utils";
 
 interface NearbyResponse { items: TurfCardData[]; total: number; page: number; pageSize: number; }
@@ -19,7 +21,7 @@ interface NearbyResponse { items: TurfCardData[]; total: number; page: number; p
 const MUMBAI = { lat: 19.076, lng: 72.8777 };
 
 function ExploreInner() {
-  const router = useRouter();
+  const router = useAppRouter();
   const params = useSearchParams();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
@@ -113,7 +115,7 @@ function ExploreInner() {
 
 export default function ExplorePage() {
   return (
-    <Suspense>
+    <Suspense fallback={<TurfGridSkeleton />}>
       <ExploreInner />
     </Suspense>
   );

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/states";
+import { ContentPageSkeleton } from "@/components/loading/page-skeletons";
 import { formatDate, formatMoney, formatTime } from "@/lib/utils";
 
 interface BookingDetail extends BookingSummary { items: Array<{ id: string; startsAt: string; endsAt: string; priceMinor: number }> }
@@ -96,5 +97,9 @@ function SuccessInner() {
 }
 
 export default function BookingSuccessPage() {
-  return <Suspense><SuccessInner /></Suspense>;
+  return (
+    <Suspense fallback={<ContentPageSkeleton dense />}>
+      <SuccessInner />
+    </Suspense>
+  );
 }

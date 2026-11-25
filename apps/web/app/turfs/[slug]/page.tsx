@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, Clock, CreditCard, Info, MapPin, ShieldCheck, Star, Wallet } from "lucide-react";
 
@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/states";
+import { TurfDetailSkeleton } from "@/components/loading/page-skeletons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAppRouter } from "@/lib/use-app-router";
 import { addDaysYmd, cn, dayLabel, formatMoney, formatTime, todayYmd } from "@/lib/utils";
 
 interface AvailabilityResponse { turfId: string; turfName: string; date: string; timezone: string; slots: SlotView[]; }
@@ -21,7 +23,7 @@ interface ReviewItem { id: string; rating: number; title: string | null; body: s
 
 function TurfDetailInner() {
   const { slug } = useParams<{ slug: string }>();
-  const router = useRouter();
+  const router = useAppRouter();
   const params = useSearchParams();
   const [date, setDate] = useState(params.get("date") ?? todayYmd());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -294,7 +296,7 @@ function TurfDetailInner() {
 
 export default function TurfDetailPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<TurfDetailSkeleton />}>
       <TurfDetailInner />
     </Suspense>
   );

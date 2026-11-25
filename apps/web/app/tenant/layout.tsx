@@ -8,8 +8,8 @@ import {
 import { api } from "@/lib/api-client";
 import type { TenantSummary } from "@turf/shared-types";
 import { DashboardShell, type NavItem } from "@/components/dashboard/shell";
+import { DashboardPageSkeleton } from "@/components/loading/page-skeletons";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/states";
 import { useSession } from "@/lib/use-session";
 
@@ -50,7 +50,7 @@ export default function TenantLayout({ children }: { children: ReactNode }) {
       }
     >
       {sessionLoading || tenants.isLoading ? (
-        <Skeleton className="h-64" />
+        <DashboardPageSkeleton />
       ) : !user ? (
         <ErrorState title="Sign in required" message="Sign in with an owner or staff account to view this dashboard." />
       ) : user.memberships.length === 0 ? (

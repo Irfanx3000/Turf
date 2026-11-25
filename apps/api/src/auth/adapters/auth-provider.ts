@@ -6,6 +6,8 @@ export interface SignUpResult {
   email: string;
   /** True when email verification is pending and no session can start yet. */
   pendingConfirmation?: boolean;
+  /** Provider session token when sign-up also establishes a session. */
+  accessToken?: string;
 }
 
 export interface SignInResult {

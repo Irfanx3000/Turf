@@ -20,11 +20,17 @@ export function authErrorMessage(err: unknown, fallback = "We're having trouble 
     if (err.status === 403 && err.errorCode === "ACCOUNT_DISABLED") {
       return "This account has been disabled. Contact support for help.";
     }
-    if (err.status === 409) {
+    if (err.status === 409 || err.errorCode === "CONFLICT") {
       return "An account with this email already exists. Try signing in instead.";
     }
-    if (err.status === 429) {
-      return "Too many attempts. Please wait before trying again.";
+    if (err.status === 429 || err.errorCode === "RATE_LIMITED") {
+      return "Too many sign-up attempts. Please wait a minute and try again.";
+    }
+    if (err.errorCode === "INVALID_EMAIL") {
+      return "Please enter a valid email address.";
+    }
+    if (err.errorCode === "WEAK_PASSWORD") {
+      return err.message || "Password does not meet the requirements.";
     }
     if (err.status >= 500) {
       return fallback;

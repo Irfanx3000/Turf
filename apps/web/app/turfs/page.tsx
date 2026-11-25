@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/states";
+import { TurfGridSkeleton } from "@/components/loading/page-skeletons";
 import { TurfCard } from "@/components/customer/turf-card";
 import { todayYmd } from "@/lib/utils";
 
@@ -97,5 +98,9 @@ function TurfsBrowser() {
 }
 
 export default function TurfsPage() {
-  return <Suspense><TurfsBrowser /></Suspense>;
+  return (
+    <Suspense fallback={<TurfGridSkeleton />}>
+      <TurfsBrowser />
+    </Suspense>
+  );
 }

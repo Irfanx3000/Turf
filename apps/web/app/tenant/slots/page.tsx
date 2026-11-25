@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardPageSkeleton } from "@/components/loading/page-skeletons";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { useTenantId } from "@/lib/use-tenant";
 import { addDaysYmd, todayYmd } from "@/lib/utils";
@@ -77,8 +78,8 @@ export default function TenantSlotsPage() {
     },
   });
 
-  if (!tenantId) return <Skeleton className="h-64" />;
-  if (turfs.isLoading) return <Skeleton className="h-64" />;
+  if (!tenantId) return <DashboardPageSkeleton />;
+  if (turfs.isLoading) return <DashboardPageSkeleton />;
   if (turfs.data?.length === 0) {
     return <EmptyState icon={<CalendarClock className="h-6 w-6" />} title="Create a turf first" description="Slots belong to a turf — add one under Turfs." />;
   }

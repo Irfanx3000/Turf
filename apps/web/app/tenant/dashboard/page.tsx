@@ -5,7 +5,7 @@ import { Banknote, CalendarClock, CreditCard, IndianRupee, TrendingUp, Wallet } 
 import { api } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardPageSkeleton } from "@/components/loading/page-skeletons";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ErrorState } from "@/components/ui/states";
 import { useTenantId } from "@/lib/use-tenant";
@@ -30,7 +30,7 @@ export default function TenantDashboardPage() {
     enabled: Boolean(tenantId),
   });
 
-  if (overview.isLoading) return <Skeleton className="h-96" />;
+  if (overview.isLoading) return <DashboardPageSkeleton />;
   if (overview.isError || !overview.data) return <ErrorState onRetry={() => overview.refetch()} message="Could not load metrics." />;
   const d = overview.data;
   const maxDaily = Math.max(1, ...d.daily.map((x) => Number(x.bookedValueMinor)));

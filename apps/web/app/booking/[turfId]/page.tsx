@@ -12,14 +12,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/states";
+import { ContentPageSkeleton } from "@/components/loading/page-skeletons";
 import { useSession } from "@/lib/use-session";
+import { useAppRouter } from "@/lib/use-app-router";
 import { cn, formatDate, formatMoney, formatTime } from "@/lib/utils";
 
 interface AvailabilityResponse { turfId: string; turfName: string; date: string; timezone: string; slots: SlotView[]; }
 
 function BookingInner() {
   const { turfId } = useParams<{ turfId: string }>();
-  const router = useRouter();
+  const router = useAppRouter();
   const params = useSearchParams();
   const slotIds = useMemo(() => (params.get("slots") ?? "").split(",").filter(Boolean), [params]);
   const date = params.get("date") ?? "";
@@ -157,5 +159,9 @@ function LinkBack() {
 }
 
 export default function BookingPage() {
-  return <Suspense><BookingInner /></Suspense>;
+  return (
+    <Suspense fallback={<ContentPageSkeleton dense />}>
+      <BookingInner />
+    </Suspense>
+  );
 }

@@ -102,6 +102,11 @@ non-browser clients).
   ISO and formatted with the venue timezone.
 - **Mutations**: optimistic UI is avoided for money paths; invalidate queries
   on success and toast on `ApiClientError`.
+- **Loading**: route transitions use `app/**/loading.tsx` skeletons plus the
+  global top progress bar (`NavigationProgress`). Client data waits use
+  React Query `isLoading` with `Skeleton` / shared page skeletons. Prefer
+  `useAppRouter()` over raw `useRouter()` so programmatic navigations also
+  start the progress bar.
 
 ## PWA
 
